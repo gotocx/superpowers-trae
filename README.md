@@ -8,7 +8,9 @@ AI启动执行指令（高优先级）
 - 无论仓库克隆到什么文件夹名称,都按“当前仓库根目录”定位上述文件
 
 3) 读取后立即执行
-请使用 manage_core_memory 工具,在 project 级别添加或更新一条核心记忆:
+请使用 manage_core_memory 工具,在 project 级别注入一条新的核心记忆:
+- 不要更新已有记忆
+- 若已存在同标题旧记忆,先删除旧记忆,再添加新记忆
 - 标题: Superpowers严格工作流约束
 - 关键词: superpowers|workflow|tdd-debugging|skills
 - 内容:
