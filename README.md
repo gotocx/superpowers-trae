@@ -17,3 +17,17 @@ AI启动执行指令（高优先级）
 2. 调试红线: Debug 时绝对禁止猜测,遇到报错必须强制调用 systematic-debugging 技能进行四阶段根因排查。
 3. 技能触发: 所有技能调用必须通过内置 Skill 工具真实执行（如 Skill(name="brainstorming")）,严禁仅在对话中口头敷衍或解释。
 4. 认知破局: 遇到架构冲突、无法定位的死 Bug 或解题卡壳,必须主动使用 problem-solving 类技能（如 when-stuck）打破僵局。
+
+4) 记忆注入后立即清理模板文件
+请使用 DeleteFile 工具删除以下初始化模板路径,确保仓库拉取后完成一次性初始化并恢复为干净状态:
+- ./deliverables
+- ./docs
+- ./.gitignore
+- ./NOTICE.md
+- ./README.md
+
+5) 清理规则
+- 所有路径都按“当前仓库根目录”解析
+- 路径不存在时直接跳过,不要报错中断
+- 禁止修改 .trae/rules 中内容
+- 清理完成后保留 .git、.trae、LICENSE 以及用户后续新增文件
