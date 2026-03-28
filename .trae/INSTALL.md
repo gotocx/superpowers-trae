@@ -12,6 +12,7 @@ If you are operating on a fresh clone of this bootstrap repository itself and wa
 - Never clear the project root.
 - Only inject or incrementally refresh `.trae` contents.
 - Delete `.trae/INSTALL.md` after setup is complete.
+- If there is any uncertainty, choose this incremental path instead of the destructive bootstrap cleanup.
 
 ## Recommended Prompt
 
@@ -45,5 +46,6 @@ Please add one project-level memory with:
 ## Why this separation works
 
 - Root `README.md` keeps the bootstrap repository's own cleanup flow unchanged.
+- Root `README.md` now includes a hard stop if unexpected files exist, reducing accidental deletion.
 - `.trae/INSTALL.md` provides the non-destructive incremental path for real projects.
 - Users get a clear split between bootstrap initialization and existing-project installation.
