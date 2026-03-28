@@ -4,7 +4,7 @@
 
 This file is for **existing projects** that already contain user source code, configs, docs, or an existing `.trae` folder.
 
-If you are operating on a fresh clone of this bootstrap repository itself and want the final workspace to contain only `.trae`, follow the root `README.md` instead.
+If the root `README.md` detects any extra files or cannot prove the current directory is a fresh clone of the bootstrap repository, the workflow should automatically continue with this incremental path instead of stopping.
 
 ## Safety Rules
 
@@ -12,7 +12,7 @@ If you are operating on a fresh clone of this bootstrap repository itself and wa
 - Never clear the project root.
 - Only inject or incrementally refresh `.trae` contents.
 - Delete `.trae/INSTALL.md` after setup is complete.
-- If there is any uncertainty, choose this incremental path instead of the destructive bootstrap cleanup.
+- If there is any uncertainty, choose this incremental path instead of destructive cleanup.
 
 ## Recommended Prompt
 
@@ -45,7 +45,7 @@ Please add one project-level memory with:
 
 ## Why this separation works
 
-- Root `README.md` keeps the bootstrap repository's own cleanup flow unchanged.
-- Root `README.md` now includes a hard stop if unexpected files exist, reducing accidental deletion.
-- `.trae/INSTALL.md` provides the non-destructive incremental path for real projects.
+- Root `README.md` still supports bootstrap cleanup when the directory is a true fresh clone.
+- Root `README.md` now auto-falls back to incremental installation instead of stopping when user files are present.
+- `.trae/INSTALL.md` provides the non-destructive path for real projects.
 - Users get a clear split between bootstrap initialization and existing-project installation.
