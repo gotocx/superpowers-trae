@@ -1,93 +1,63 @@
 # Installing Superpowers for Trae
 
-## Prerequisites
+## Safety First
 
-- [Trae IDE](https://www.trae.ai) installed
-- Git available in the local environment
+This repository supports **two modes**:
 
-## Installation
+- **Incremental mode (default)**: for real projects that already contain source code, configs, docs, or an existing `.trae` folder.
+- **Initialization mode**: only for a fresh clone of this bootstrap repository when the explicit goal is to shrink the workspace down to only `.trae`.
 
-Place this `.trae` folder at the root of the target project, then ask the Trae assistant to perform the setup for you.
+If you cannot prove deletion is safe, you must choose **Incremental mode**.
 
-Just copy and paste the following prompt into your Trae chat:
+## Incremental Mode (Default)
 
-> **For the AI Assistant:** Please initialize Superpowers for this project from the project root.
->
-> Requirements:
-> 1. Treat the current workspace root as the target project root and create `.trae` there if it does not already exist.
-> 2. Install `.trae/rules/superpowers.md`.
-> 3. Fetch `https://github.com/obra/superpowers-skills.git` into a temporary folder, then flatten the nested directories into `.trae/skills/`.
-> 4. Rename `using-skills` to `using-superpowers`.
-> 5. Use `manage_core_memory` to automatically register the project memory described below after the files are ready.
-> 6. If temporary directory cleanup fails, finish the setup and explicitly tell me to delete `.trae/temp_skills` manually after the task.
-> 7. After setup, remind me that dynamic skill loading and memory usage may consume context faster than usual.
->
-> **Step 1: Run the appropriate initialization script from the project root**
->
-> ```powershell
-> if (-not (Test-Path ".trae")) { New-Item -ItemType Directory -Force -Path ".trae" | Out-Null }
-> if (-not (Test-Path ".trae\rules")) { New-Item -ItemType Directory -Force -Path ".trae\rules" | Out-Null }
->
-> Invoke-WebRequest -Uri "https://raw.githubusercontent.com/obra/superpowers/main/.trae/rules/superpowers.md" -OutFile ".trae\rules\superpowers.md"
->
-> if (Test-Path ".trae\skills") { Remove-Item -Recurse -Force ".trae\skills" }
-> if (Test-Path ".trae\temp_skills") { Remove-Item -Recurse -Force ".trae\temp_skills" -ErrorAction SilentlyContinue }
-> git clone https://github.com/obra/superpowers-skills.git .trae\temp_skills 2>$null
->
-> New-Item -ItemType Directory -Force -Path ".trae\skills" | Out-Null
->
-> Get-ChildItem -Path ".trae\temp_skills\skills" -Directory | Where-Object { $_.Name -notin @('tool', 'examples') } | ForEach-Object {
->     $categoryDir = $_.FullName
->     Get-ChildItem -Path $categoryDir -Directory | ForEach-Object {
->         Move-Item -Path $_.FullName -Destination ".trae\skills\" -Force
->     }
-> }
->
-> if (Test-Path ".trae\skills\using-skills") { Rename-Item -Path ".trae\skills\using-skills" -NewName "using-superpowers" }
-> Remove-Item -Recurse -Force ".trae\temp_skills" -ErrorAction SilentlyContinue
-> ```
->
-> ```bash
-> mkdir -p .trae/rules
-> curl -s -o .trae/rules/superpowers.md https://raw.githubusercontent.com/obra/superpowers/main/.trae/rules/superpowers.md
-> rm -rf .trae/skills .trae/temp_skills
-> git clone https://github.com/obra/superpowers-skills.git .trae/temp_skills >/dev/null 2>&1
-> mkdir -p .trae/skills
-> find .trae/temp_skills/skills -mindepth 2 -maxdepth 2 -type d | while read dir; do
->   mv "$dir" .trae/skills/
-> done
-> rm -rf .trae/skills/tool .trae/skills/examples
-> if [ -d ".trae/skills/using-skills" ]; then mv .trae/skills/using-skills .trae/skills/using-superpowers; fi
-> rm -rf .trae/temp_skills
-> ```
->
-> **Step 2: Register the project core memory**
->
-> Please use `manage_core_memory` to add one project-level memory with:
-> - Title: Superpowers 严格工作流约束
-> - Keywords: superpowers|workflow|tdd|debugging|skills
-> - Category: Knowledge
-> - Via: request
-> - Content: 本项目严格遵循 obra/superpowers 开发方法论：知识沉淀与测试驱动开发优先；系统化过程胜于临时猜测；简化复杂性，以简洁为主要目标；证据胜于主张，在宣布成功前先核实。遇到功能开发先做设计与测试；遇到报错必须调用 systematic-debugging 做根因排查；技能调用必须通过内置 Skill 工具真实执行；多步骤流程使用 TodoWrite；跨任务知识通过 manage_core_memory 沉淀。
+Use this mode when the target project already has user files.
 
-## What the AI should complete
+### Recommended prompt
 
-1. Ensure `.trae` is created at the project root rather than inside a nested copied folder.
-2. Install the Trae rule file to `.trae/rules/superpowers.md`.
-3. Clone and flatten the latest `superpowers-skills` repository into `.trae/skills/`.
-4. Rename `using-skills` to `using-superpowers`.
-5. Register the project-level core memory automatically.
-6. Warn the user if `.trae/temp_skills` could not be removed cleanly.
+> Please run the incremental mode defined by `README.md` from the current project root. Preserve all user source files and configs, only inject and incrementally update `.trae`, and delete `.trae/INSTALL.md` after setup.
 
-## Why this Trae adaptation works
+### What the AI should do
 
-This migration keeps the core Superpowers philosophy while adapting it to Trae's native runtime model.
+1. Treat the current workspace root as the target project root.
+2. Create `.trae` only if it does not already exist.
+3. Install or refresh `.trae/rules/superpowers.md`.
+4. Fetch the latest `https://github.com/obra/superpowers-skills.git` into a temporary folder.
+5. Incrementally copy missing skills into `.trae/skills/` and refresh same-name official skills.
+6. Preserve user-created source files, configs, docs, custom rules, and custom skills that are unrelated to the official refresh.
+7. Rename `using-skills` to `using-superpowers` if needed.
+8. Delete temporary folders and delete `.trae/INSTALL.md` when setup is complete.
+9. Register the project core memory by deleting any existing same-title memory first, then adding a new one.
 
-- **No Hooks Required**: Behavior is constrained through Trae Memory and Workspace Rules rather than external hooks.
-- **Flattened Skills Directory**: Trae currently resolves skills more reliably from a flat `.trae/skills/` structure.
-- **Flowcharts -> Trae Todo List**: Guided workflows map naturally onto Trae's Todo List instead of terminal-only checklists.
-- **Local Knowledge -> Trae Core Memory**: This replaces `remembering-conversations` with `manage_core_memory`, and benefits from Trae's memory update mechanism to keep context more active and better coordinated over time.
+## Initialization Mode (Only for Bootstrap Copies)
 
-## Updating
+Use this mode only when the current workspace is a fresh clone of this repository and there is no user business code to preserve.
 
-Ask the Trae assistant to run the same installation prompt again from the project root. The setup will refresh `.trae/skills/` with the latest upstream skills and preserve the Trae-native workflow entrypoint.
+### Recommended prompt
+
+> Please run the initialization mode defined by `README.md` from the current project root. First inject the project memory, then delete everything except `./.trae`, and also delete `./.git` and `./.trae/INSTALL.md`.
+
+### What the AI should do
+
+1. Prepare `.trae/rules/superpowers.md` and `.trae/skills/` first.
+2. Register the project core memory by deleting any existing same-title memory first, then adding a new one.
+3. List direct children of the current project root.
+4. Delete everything except `./.trae`.
+5. Also delete `./.git` and `./.trae/INSTALL.md`.
+
+## Project Memory To Register
+
+Please add one project-level memory with:
+
+- Title: Superpowers 严格工作流约束
+- Keywords: superpowers|workflow|tdd|debugging|skills|modes
+- Category: Knowledge
+- Via: request
+- Content: 本项目严格遵循 obra/superpowers 开发方法论：知识沉淀与测试驱动开发优先；系统化过程胜于临时猜测；简化复杂性，以简洁为主要目标；证据胜于主张，在宣布成功前先核实。遇到功能开发先做设计与测试；遇到报错必须调用 systematic-debugging 做根因排查；技能调用必须通过内置 Skill 工具真实执行；多步骤流程使用 TodoWrite；跨任务知识通过 manage_core_memory 沉淀。若项目已有用户源码或已有 .trae 内容，必须走增量模态，不得误删用户文件。
+
+## Why This Adaptation Works
+
+- **Dual-mode safety**: avoids destructive cleanup in real projects.
+- **Incremental updates**: keeps user files while refreshing official Superpowers content.
+- **Trae-native memory**: keeps the workflow anchored through `manage_core_memory`.
+- **Prompt-driven execution**: gives end users a stable phrase to trigger the correct mode.
