@@ -10,7 +10,7 @@ AI 初始化指令（严格版）
 - 引导仓库根目录 = 包含本 `README.md` 的目录。
 - 目标项目根目录 = 最终让 Trae 直接读取 `./.trae` 的目录。
 - 源 `.trae` = 引导仓库根目录下现有的 `./.trae`。
-- 冗余引导副本 = 目标项目根目录下仅用于分发的 `./superpowers-trae` 目录,且同时包含 `./README.md`、`./NOTICE.md`、`./LICENSE`、`./deliverables/`、`./docs/` 与 `./.trae/`。
+- 冗余引导副本 = 目标项目根目录下仅用于分发的 `./superpowers-trae` 目录,且同时包含 `./README.md`、`./NOTICE.md`、`./LICENSE`、`./.gitignore` 与 `./.trae/`。
 - 旧临时残留 = 旧失败流程留下的 `./.tmp-superpowers-*` 目录。
 
 2) 模式判定
@@ -25,7 +25,7 @@ AI 初始化指令（严格版）
 3. 先验证 `./.trae/rules/superpowers.md` 与 `./.trae/skills/` 存在且可读。
 4. 验证通过后,使用 `manage_core_memory` 在 project 级别删除同标题旧记忆,再添加新记忆。
 5. 仅在记忆注入成功后,删除 `./.trae/INSTALL.md`。
-6. 再删除当前工作区内除 `./.trae` 外的所有内容,包括 `./.git`、`./deliverables/`、`./docs/`、`./README.md`、`./LICENSE`、`./NOTICE.md`。
+6. 再删除当前工作区内除 `./.trae` 外的所有内容,包括 `./.git`、`./.gitignore`、`./README.md`、`./LICENSE`、`./NOTICE.md`。
 7. 完成判定: 工作区只剩 `./.trae`,且 `./.trae/INSTALL.md` 已删除。
 
 4) existing/nested 模式总规则

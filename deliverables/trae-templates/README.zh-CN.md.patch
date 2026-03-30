@@ -1,7 +1,0 @@
-### 工具与配置
-
-在现有表格中追加一行：
-
-```markdown
-| **[Superpowers for TRAE Init](./templates/tools-devops/superpowers-trae-init)** | 使用改造后的 Superpowers 规则、技能和记忆说明初始化 TRAE 项目。 | TRAE、工作流、技能 |
-```

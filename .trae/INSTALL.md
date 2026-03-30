@@ -92,7 +92,7 @@ After Phase E, cleanup is limited to these items only:
 
 1. Redundant bootstrap clone:
    - Delete the whole nested `target-project-root/superpowers-trae` directory if, and only if, it clearly matches this bootstrap repository.
-   - Matching signals include: `README.md`, `NOTICE.md`, `LICENSE`, `deliverables/`, `docs/`, and a source `.trae` under that directory.
+   - Matching signals include: `README.md`, `NOTICE.md`, `LICENSE`, `.gitignore`, and a source `.trae` under that directory.
    - Do not delete any other similarly named user directory.
 
 2. Stale temp residue from older broken runs:
