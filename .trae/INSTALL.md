@@ -1,70 +1,158 @@
-# Superpowers for Trae: existing/nested install flow
+# Superpowers for Trae: variable + gate install flow
 
 This file is an instruction document, not a script.
 
 - Never execute `INSTALL.md` itself.
-- Never treat this file as a command, manual-run target, or deletion target before installation is finished.
+- Never treat this file as a command, a manual-run target, or a deletion target before the cleanup gate is open.
+- Never create `.tmp-*`, `tmp`, `temp`, `.cache`, or any other temporary install directory.
+- Never clone, fetch, or download `obra/superpowers-skills` or any other remote repository during installation.
 
-## 1. Goal
+## 1. Minimal bootstrap package
 
-Make the real target project root contain a usable `./.trae`, preserve the user's project files, inject the required project memory, and then do only minimal safe cleanup.
+The bootstrap repository is intentionally minimal. Its working tree should contain only:
 
-## 2. Definitions
+- `./.trae`
+- `./README.md`
+- `./LICENSE`
+- `./NOTICE.md`
+- `./.gitignore`
 
-- Bootstrap repository root = the cloned `superpowers-trae` directory that contains this file.
-- Target project root = the directory where Trae must finally read `./.trae`.
-- Source `.trae` = `bootstrap-repo-root/.trae`.
-- Redundant bootstrap clone = a nested `./superpowers-trae` directory under the target project root that clearly matches this bootstrap repository.
-- Stale temp residue = an old `./.tmp-superpowers-*` directory left behind by a previous broken run.
+A fresh clone may also contain `./.git`.
 
-## 3. Hard rules
+## 2. Required variables
 
-- Use only `bootstrap-repo-root/.trae` as the installation source.
-- Do not clone, fetch, or download `obra/superpowers-skills` or any other remote repository during installation.
-- Do not create any `.tmp-*`, `tmp`, `temp`, or other temporary directories.
-- Do not clear the project root.
-- Do not delete user source files, configs, docs, custom rules, or custom skills.
-- Do not modify the target `.trae` after it has passed verification, except for one final deletion of `target-project-root/.trae/INSTALL.md`.
-- Do not delete any directory unless it can be clearly identified as a redundant bootstrap clone or stale temp residue.
-- If cleanup fails because of a Windows file lock, do not treat that as an installation failure once the target `.trae` and project memory are already in place.
+Before any copy, delete, overwrite, or memory action, you must explicitly compute and confirm:
 
-## 4. Required order
+- `source_root`
+- `target_root`
+- `target_trae_path`
+- `memory_title`
 
-### Phase A: identify source and target
+Fixed value:
 
-1. Treat the current workspace root as the target project root.
-2. If `superpowers-trae` is nested under that target root, treat the nested `superpowers-trae/.trae` only as source material.
-3. The final usable path must be `target-project-root/.trae`.
-4. `bootstrap-repo-root/.trae` is never the final result in a nested-clone scenario.
+- `memory_title = "Superpowers 严格工作流约束"`
 
-### Phase B: copy or refresh target `.trae`
+If any variable is still ambiguous, do not proceed.
 
-1. Create `target-project-root/.trae` only if it does not already exist.
-2. Copy or refresh `rules/superpowers.md` from the source `.trae`.
-3. Copy missing official skills from the source `.trae/skills/`.
-4. Refresh same-name official skills from the source `.trae/skills/`.
-5. Preserve custom target rules and custom target skills that do not conflict by name with official source files.
-6. Do not delete `target-project-root/.trae/INSTALL.md` yet.
+## 3. Root detection: allowed cases only
 
-### Phase C: verify target `.trae`
+You must first list the direct children of the current workspace root, then choose exactly one of these cases.
 
-Verify all of the following before doing anything else:
+### Case A: bootstrap mode
 
-1. `target-project-root/.trae/rules/superpowers.md` exists.
-2. `target-project-root/.trae/skills/` exists.
-3. The target skills directory contains at least the core official skills copied from source, including `brainstorming`, `systematic-debugging`, `test-driven-development`, `writing-plans`, and `when-stuck`.
+Conditions:
 
-Once Phase C passes:
+- The current workspace root is the bootstrap repository root.
+- It is a true fresh clone of this repository.
+- Its direct children are limited to:
+  - `./.git`
+  - `./.trae`
+  - `./README.md`
+  - `./LICENSE`
+  - `./NOTICE.md`
+  - `./.gitignore`
 
-- Freeze the target `.trae`.
-- Do not keep editing it.
-- Do not start any temp-folder cleanup before this verification succeeds.
+Variables:
 
-### Phase D: inject project memory
+- `source_root = .`
+- `target_root = .`
+- `target_trae_path = ./.trae`
 
-Use `manage_core_memory` at project level:
+### Case B: nested mode, running from the real target project root
 
-1. Delete any existing memory with the same title first.
+Conditions:
+
+- The current workspace root contains `./superpowers-trae`.
+- `./superpowers-trae` matches the minimal bootstrap package structure above.
+
+Variables:
+
+- `source_root = ./superpowers-trae`
+- `target_root = .`
+- `target_trae_path = ./.trae`
+
+### Case C: nested mode, but currently standing inside the bootstrap clone
+
+Conditions:
+
+- The current workspace root itself is named `superpowers-trae`.
+- The current workspace root matches the minimal bootstrap package structure above.
+- The parent directory is the real target project root.
+
+Variables:
+
+- `source_root = .`
+- `target_root = ..`
+- `target_trae_path = ../.trae`
+
+### Root detection failure
+
+If you cannot prove Case A, B, or C exactly:
+
+- Do not copy anything.
+- Do not delete anything.
+- Do not inject memory.
+- Report that root detection failed.
+
+## 4. Gate 1: path self-check
+
+Before copying files, all of these must be true:
+
+1. `target_trae_path` is exactly the `.trae` directory under `target_root`.
+2. In nested mode, `target_trae_path` is outside `source_root`.
+3. In nested mode, the final destination must not be `source_root/.trae`.
+
+If any path self-check fails:
+
+- Do not enter the copy phase.
+- Report that the target path was derived incorrectly.
+
+## 5. Phase 1: copy or refresh target `.trae`
+
+Use only `source_root/.trae` as source material.
+
+Allowed actions:
+
+1. Create `target_trae_path` only if missing.
+2. Refresh `target_trae_path/rules/superpowers.md`.
+3. Copy missing official skills from `source_root/.trae/skills/`.
+4. Refresh same-name official skills from `source_root/.trae/skills/`.
+5. Preserve user custom rules and non-conflicting custom skills in the target project.
+
+Forbidden during Phase 1:
+
+- Deleting `target_trae_path/INSTALL.md`
+- Deleting `source_root`
+- Deleting any bootstrap clone candidate
+- Deleting any user project directory
+
+## 6. Gate 2: target `.trae` verification
+
+After Phase 1, verify all of the following:
+
+1. `target_trae_path/rules/superpowers.md` exists.
+2. `target_trae_path/skills/` exists.
+3. `target_trae_path/skills/` contains at least these core skills:
+   - `brainstorming`
+   - `systematic-debugging`
+   - `test-driven-development`
+   - `writing-plans`
+   - `when-stuck`
+
+If Gate 2 fails:
+
+- Do not inject memory.
+- Do not delete `INSTALL.md`.
+- Do not delete `source_root`.
+- Report that `.trae` verification failed.
+
+## 7. Phase 2: memory injection
+
+Only after Gate 2 passes may you call `manage_core_memory`.
+
+Required steps:
+
+1. Delete any existing memory with the same title.
 2. Add one new memory with:
    - Title: `Superpowers 严格工作流约束`
    - Keywords: `superpowers|workflow|tdd|debugging|skills`
@@ -76,50 +164,66 @@ Use `manage_core_memory` at project level:
      4. 多步骤流程使用 TodoWrite。
      5. 跨任务知识通过 manage_core_memory 沉淀。
 
-If memory injection fails:
+## 8. Gate 3: memory self-check
 
-- Report the failure clearly.
-- Do not destroy the already copied target `.trae`.
+You may enter cleanup only if memory injection is self-verified.
 
-### Phase E: finalize target `.trae`
+Memory self-check must confirm:
 
-1. After the target `.trae` is verified and project memory injection succeeds, delete `target-project-root/.trae/INSTALL.md` exactly once.
-2. Do not touch the target `.trae` again after that.
+1. The delete/add operation returned success.
+2. The memory title exactly matches `memory_title`.
+3. If the tool supports readback or confirmation, perform one same-title confirmation immediately.
 
-### Phase F: safe cleanup only
+If Gate 3 fails:
 
-After Phase E, cleanup is limited to these items only:
+- Do not delete `target_trae_path/INSTALL.md`.
+- Do not delete `source_root`.
+- Do not declare success.
+- Report that `.trae` is present but memory injection is not complete.
 
-1. Redundant bootstrap clone:
-   - Delete the whole nested `target-project-root/superpowers-trae` directory if, and only if, it clearly matches this bootstrap repository.
-   - Matching signals include: `README.md`, `NOTICE.md`, `LICENSE`, `.gitignore`, and a source `.trae` under that directory.
-   - Do not delete any other similarly named user directory.
+## 9. Phase 3: cleanup, only after all gates pass
 
-2. Stale temp residue from older broken runs:
-   - Only directories named `./.tmp-superpowers-*` may be considered.
-   - This workflow must not create them.
-   - If such a directory exists from an older failed run, you may attempt one safe deletion at the very end.
+Cleanup is allowed only when all three are true:
 
-## 5. File-lock handling
+- Gate 1 path self-check passed.
+- Gate 2 target `.trae` verification passed.
+- Gate 3 memory self-check passed.
 
-If deleting the redundant bootstrap clone or stale temp residue fails because files are locked on Windows:
+### Cleanup in bootstrap mode
 
-1. Stop cleanup.
-2. Do not retry by editing the target `.trae`.
-3. Report the exact remaining path.
-4. Tell the user to close the locking process or restart the IDE/system and delete that leftover directory manually.
+1. Delete `./.trae/INSTALL.md`.
+2. Delete everything else in the working tree except `./.trae`, including:
+   - `./.git`
+   - `./README.md`
+   - `./LICENSE`
+   - `./NOTICE.md`
+   - `./.gitignore`
 
-## 6. Success criteria
+### Cleanup in nested mode
 
-Installation is successful when:
+1. Delete `target_trae_path/INSTALL.md`.
+2. If `source_root` or `target_root/superpowers-trae` can be proven to be a redundant bootstrap clone candidate, delete that whole redundant `superpowers-trae` directory.
+3. At the very end, you may attempt one safe deletion of stale `./.tmp-superpowers-*` residue from older failed runs.
 
-1. `target-project-root/.trae` is present and usable.
-2. `target-project-root/.trae/rules/superpowers.md` exists.
-3. `target-project-root/.trae/skills/` exists with the core official skills.
-4. Project memory has been injected successfully.
+## 10. File-lock handling
 
-Cleanup is best-effort after that:
+If deleting the redundant bootstrap clone or stale residue fails because of a Windows file lock:
 
-- If the redundant bootstrap clone is deleted successfully, that is the ideal final state.
-- If an old `.tmp-superpowers-*` residue is deleted successfully, that is also ideal.
-- If either cleanup step is blocked by a Windows file lock, installation still counts as successful, but the leftover path must be reported clearly.
+1. Stop cleanup immediately.
+2. Do not edit `target_trae_path` again.
+3. Do not roll back the installed `.trae`.
+4. Report the exact leftover path.
+5. Tell the user to close the locking process or restart the IDE/system and delete that leftover path manually.
+
+## 11. Success criteria
+
+Installation may be declared successful only when all of the following are true:
+
+1. `target_trae_path` is located under the correct `target_root`.
+2. `target_trae_path/rules/superpowers.md` exists.
+3. `target_trae_path/skills/` exists and contains the core skills.
+4. Memory injection passed Gate 3.
+
+Nested failure example:
+
+- If the final result is `superpowers-trae/.trae` instead of `target_root/.trae`, installation is in the wrong directory and must not be reported as successful.
