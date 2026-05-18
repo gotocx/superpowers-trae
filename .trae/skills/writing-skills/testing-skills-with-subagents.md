@@ -1,8 +1,3 @@
----
-name: testing-skills-with-subagents
-description: Use when testing skill behavior with RED-GREEN-REFACTOR pressure scenarios and subagents
----
-
 # Testing Skills With Subagents
 
 **Load this reference when:** creating or editing skills, before deployment, to verify they work under pressure and resist rationalization.

@@ -56,19 +56,19 @@ digraph stuck_dispatch {
 
 | How You're Stuck | Use This Skill |
 |------------------|----------------|
-| **Complexity spiraling** - Same thing 5+ ways, growing special cases | skills/problem-solving/simplification-cascades |
-| **Need innovation** - Conventional solutions inadequate, can't find fitting approach | skills/problem-solving/collision-zone-thinking |
-| **Recurring patterns** - Same issue different places, reinventing wheels | skills/problem-solving/meta-pattern-recognition |
-| **Forced by assumptions** - "Must be done this way", can't question premise | skills/problem-solving/inversion-exercise |
-| **Scale uncertainty** - Will it work in production? Edge cases unclear? | skills/problem-solving/scale-game |
-| **Code broken** - Wrong behavior, test failing, unexpected output | skills/debugging/systematic-debugging |
-| **Multiple independent problems** - Can parallelize investigation | skills/collaboration/dispatching-parallel-agents |
-| **Root cause unknown** - Symptom clear, cause hidden | skills/debugging/root-cause-tracing |
+| **Complexity spiraling** - Same thing 5+ ways, growing special cases | `Skill(name="simplification-cascades")` |
+| **Need innovation** - Conventional solutions inadequate, can't find fitting approach | `Skill(name="collision-zone-thinking")` |
+| **Recurring patterns** - Same issue different places, reinventing wheels | `Skill(name="meta-pattern-recognition")` |
+| **Forced by assumptions** - "Must be done this way", can't question premise | `Skill(name="inversion-exercise")` |
+| **Scale uncertainty** - Will it work in production? Edge cases unclear? | `Skill(name="scale-game")` |
+| **Code broken** - Wrong behavior, test failing, unexpected output | `Skill(name="systematic-debugging")` |
+| **Multiple independent problems** - Can parallelize investigation | `Skill(name="dispatching-parallel-agents")` |
+| **Root cause unknown** - Symptom clear, cause hidden | `Skill(name="root-cause-tracing")` |
 
 ## Process
 
 1. **Identify stuck-type** - What symptom matches above?
-2. **Load that skill** - Read the specific technique
+2. **Load that skill** - Use Trae `Skill(name="<skill>")` for the specific technique
 3. **Apply technique** - Follow its process
 4. **If still stuck** - Try different technique or combine
 

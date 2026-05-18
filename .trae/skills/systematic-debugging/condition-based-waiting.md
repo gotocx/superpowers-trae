@@ -1,8 +1,3 @@
----
-name: condition-based-waiting
-description: Use when tests have arbitrary sleeps/timeouts, race conditions, flaky async behavior, or timing-dependent failures
----
-
 # Condition-Based Waiting
 
 ## Overview

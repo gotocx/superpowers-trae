@@ -1,8 +1,3 @@
----
-name: defense-in-depth
-description: Use after finding a root cause when adding validation at multiple layers would make the bug impossible or obvious
----
-
 # Defense-in-Depth Validation
 
 ## Overview

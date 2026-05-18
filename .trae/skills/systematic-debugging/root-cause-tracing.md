@@ -1,8 +1,3 @@
----
-name: root-cause-tracing
-description: Use when a bug manifests deep in a stack and you need to trace backward to the original trigger
----
-
 # Root Cause Tracing
 
 ## Overview

@@ -1,19 +1,17 @@
 ---
-name: Executing Plans
-description: Execute detailed plans in batches with review checkpoints
-when_to_use: when partner provides a complete implementation plan to execute in controlled batches with review checkpoints
-version: 2.2.0
+name: executing-plans
+description: Use when you have a written implementation plan to execute in a separate session with review checkpoints
 ---
 
 # Executing Plans
 
 ## Overview
 
-Load plan, review critically, execute tasks in batches, report for review between batches.
+Load plan, review critically, execute all tasks, report when complete.
 
-**Core principle:** Batch execution with checkpoints for architect review.
+**Announce at start:** "I'm using the executing-plans skill to implement this plan."
 
-**Announce at start:** "I'm using the Executing Plans skill to implement this plan."
+**Note:** Tell your human partner that Superpowers works much better with access to subagents. In Trae, prefer `Skill(name="subagent-driven-development")` when the native `Task` tool is available. Use this skill for inline execution when subagents are unavailable or the work is too tightly coupled to delegate.
 
 ## The Process
 
@@ -23,8 +21,7 @@ Load plan, review critically, execute tasks in batches, report for review betwee
 3. If concerns: Raise them with your human partner before starting
 4. If no concerns: Create TodoWrite and proceed
 
-### Step 2: Execute Batch
-**Default: First 3 tasks**
+### Step 2: Execute Tasks
 
 For each task:
 1. Mark as in_progress
@@ -32,29 +29,17 @@ For each task:
 3. Run verifications as specified
 4. Mark as completed
 
-### Step 3: Report
-When batch complete:
-- Show what was implemented
-- Show verification output
-- Say: "Ready for feedback."
-
-### Step 4: Continue
-Based on feedback:
-- Apply changes if needed
-- Execute next batch
-- Repeat until complete
-
-### Step 5: Complete Development
+### Step 3: Complete Development
 
 After all tasks complete and verified:
-- Announce: "I'm using the Finishing a Development Branch skill to complete this work."
-- Switch to skills/collaboration/finishing-a-development-branch
+- Announce: "I'm using the finishing-a-development-branch skill to complete this work."
+- **REQUIRED SUB-SKILL:** Use superpowers:finishing-a-development-branch
 - Follow that skill to verify tests, present options, execute choice
 
 ## When to Stop and Ask for Help
 
 **STOP executing immediately when:**
-- Hit a blocker mid-batch (missing dependency, test fails, instruction unclear)
+- Hit a blocker (missing dependency, test fails, instruction unclear)
 - Plan has critical gaps preventing starting
 - You don't understand an instruction
 - Verification fails repeatedly
@@ -74,5 +59,12 @@ After all tasks complete and verified:
 - Follow plan steps exactly
 - Don't skip verifications
 - Reference skills when plan says to
-- Between batches: just report and wait
 - Stop when blocked, don't guess
+- Never start implementation on main/master branch without explicit user consent
+
+## Integration
+
+**Required workflow skills:**
+- **superpowers:using-git-worktrees** - Ensures isolated workspace (creates one or verifies existing)
+- **superpowers:writing-plans** - Creates the plan this skill executes
+- **superpowers:finishing-a-development-branch** - Complete development after all tasks

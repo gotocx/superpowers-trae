@@ -1,8 +1,6 @@
 ---
-name: Code Review Reception
-description: Receive and act on code review feedback with technical rigor, not performative agreement or blind implementation
-when_to_use: when receiving code review feedback, before implementing suggestions, especially if feedback seems unclear or technically questionable
-version: 1.1.0
+name: receiving-code-review
+description: Use when receiving code review feedback, before implementing suggestions, especially if feedback seems unclear or technically questionable - requires technical rigor and verification, not performative agreement or blind implementation
 ---
 
 # Code Review Reception
@@ -29,7 +27,7 @@ WHEN receiving code review feedback:
 ## Forbidden Responses
 
 **NEVER:**
-- "You're absolutely right!" (explicit CLAUDE.md violation)
+- "You're absolutely right!" (performative agreement; violates this workflow's technical-rigor standard)
 - "Great point!" / "Excellent feedback!" (performative)
 - "Let me implement that now" (before verification)
 
@@ -201,6 +199,10 @@ your human partner: "Fix items 1-6"
 You understand 1,2,3,6. Unclear on 4,5.
 ✅ "Understand 1,2,3,6. Need clarification on 4 and 5 before implementing."
 ```
+
+## GitHub Thread Replies
+
+When replying to inline review comments on GitHub, reply in the comment thread (`gh api repos/{owner}/{repo}/pulls/{pr}/comments/{id}/replies`), not as a top-level PR comment.
 
 ## The Bottom Line
 

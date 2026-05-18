@@ -133,11 +133,16 @@ After Phase 1, verify all of the following:
 1. `target_trae_path/rules/superpowers.md` exists.
 2. `target_trae_path/skills/` exists.
 3. `target_trae_path/skills/` contains at least these core skills:
+   - `using-superpowers`
    - `brainstorming`
+   - `using-git-worktrees`
+   - `writing-plans`
+   - `subagent-driven-development`
    - `systematic-debugging`
    - `test-driven-development`
-   - `writing-plans`
-   - `when-stuck`
+   - `verification-before-completion`
+   - `condition-based-waiting`
+   - `root-cause-tracing`
 
 If Gate 2 fails:
 
@@ -158,11 +163,11 @@ Required steps:
    - Keywords: `superpowers|workflow|tdd|debugging|skills`
    - Content:
      本项目严格遵循 obra/superpowers 开发方法论：
-     1. 功能开发必须先做设计与测试,遵循 brainstorming > using-git-worktrees > writing-plans > test-driven-development > code-review > finish-branch 的闭环。
+     1. 功能开发必须先做设计与测试,遵循 using-superpowers > brainstorming > using-git-worktrees > writing-plans > subagent-driven-development/executing-plans > test-driven-development > requesting-code-review > finishing-a-development-branch 的闭环。
      2. 遇到报错或测试失败时,禁止猜测,必须调用 systematic-debugging 做根因排查。
-     3. 技能调用必须通过内置 Skill 工具真实执行。
-     4. 多步骤流程使用 TodoWrite。
-     5. 跨任务知识通过 manage_core_memory 沉淀。
+     3. 深层调用栈问题使用 root-cause-tracing,异步等待或 flaky 测试使用 condition-based-waiting,修复后用 defense-in-depth 防复发。
+     4. 技能调用必须通过 Trae 内置 Skill 工具真实执行,`Task tool (general-purpose)` 等价于 Trae Task 子代理。
+     5. 多步骤流程使用 TodoWrite,跨任务知识通过 manage_core_memory 沉淀。
 
 ## 8. Gate 3: memory self-check
 

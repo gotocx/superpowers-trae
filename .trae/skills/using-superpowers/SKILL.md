@@ -1,102 +1,101 @@
 ---
-name: Getting Started with Skills
-description: Skills wiki intro - mandatory workflows, search tool, brainstorming triggers
-when_to_use: when starting any conversation
-version: 4.0.2
+name: using-superpowers
+description: Use when starting any conversation in Trae - establishes mandatory skill invocation, Trae tool mapping, and workflow priority before any response or action
 ---
 
-# Getting Started with Skills
+<SUBAGENT-STOP>
+If you were dispatched by Trae Task as a subagent for a specific task, skip this skill unless the task explicitly asks you to use it.
+</SUBAGENT-STOP>
 
-## Critical Rules
+<EXTREMELY-IMPORTANT>
+If you think there is even a 1% chance a skill might apply to what you are doing, you MUST invoke the Trae Skill tool before responding or acting.
 
-1. **Use Read tool before announcing skill usage.** The session-start hook does NOT read skills for you. Announcing without calling Read = lying.
+If a skill applies, you do not have a choice. Use it.
+</EXTREMELY-IMPORTANT>
 
-2. **Follow mandatory workflows.** Brainstorming before coding. Check for skills before ANY task.
+# Using Superpowers in Trae
 
-3. **Create TodoWrite todos for checklists.** Mental tracking = steps get skipped. Every time.
+## Instruction Priority
 
+1. User's explicit instructions, project rules, and direct requests are highest priority.
+2. Superpowers skills define the required workflow and override casual default behavior.
+3. Default model habits are lowest priority.
 
-## Mandatory Workflow: Before ANY Task
+If a user instruction conflicts with a skill, follow the user and state the conflict.
 
-**1. Check skills list** at session start, or run `find-skills [PATTERN]` to filter.
+## Trae Tool Mapping
 
-**2. If relevant skill exists, YOU MUST use it:**
+When upstream Superpowers text mentions another harness, translate it to Trae:
 
-- Use Read tool with full path: `${SUPERPOWERS_SKILLS_ROOT}/skills/category/skill-name/SKILL.md`
-- Read ENTIRE file, not just frontmatter
-- Announce: "I've read [Skill Name] skill and I'm using it to [purpose]"
-- Follow it exactly
+| Upstream wording | In Trae |
+|---|---|
+| `Skill` tool, `superpowers:<name>` | `Skill(name="<name>")` |
+| `TodoWrite` | Trae `TodoWrite` task list |
+| `Task tool (general-purpose)` | Trae `Task` subagent with the provided prompt template |
+| `Read`, `Write`, `Edit` | Trae file tools |
+| `Bash` | Trae terminal/shell tool |
+| `manage_core_memory` or local conversation memory scripts | Trae `manage_core_memory` project memory |
 
-**Don't rationalize:**
-- "I remember this skill" - Skills evolve. Read the current version.
-- "Session-start showed it to me" - That was using-skills/SKILL.md only. Read the actual skill.
-- "This doesn't count as a task" - It counts. Find and read skills.
+Do not use legacy `find-skills`, `skill-run`, or `remembering-conversations` scripts in Trae. Skill discovery and invocation must happen through the native Skill tool and the project rules.
 
-**Why:** Skills document proven techniques that save time and prevent mistakes. Not using available skills means repeating solved problems and making known errors.
+## The Rule
 
-If a skill for your task exists, you must use it or you will fail at your task.
+Invoke relevant or requested skills before any response, clarification, file read, shell command, implementation, or status claim.
 
-## Skills with Checklists
+If you invoke a skill:
 
-If a skill has a checklist, YOU MUST create TodoWrite todos for EACH item.
+1. Announce briefly: "I'm using `<skill>` to `<purpose>`."
+2. If the skill has a checklist or multi-step process, create Trae `TodoWrite` items for the steps.
+3. Follow the skill exactly unless the user explicitly overrides it.
 
-**Don't:**
-- Work through checklist mentally
-- Skip creating todos "to save time"
-- Batch multiple items into one todo
-- Mark complete without doing them
+If a skill contains prompt templates such as `implementer-prompt.md` or `code-reviewer.md`, load the template and pass its completed content to Trae Task. Do not rely on session history as a substitute for the template.
 
-**Why:** Checklists without TodoWrite tracking = steps get skipped. Every time. The overhead of TodoWrite is tiny compared to the cost of missing steps.
+## Skill Priority
 
-**Examples:** skills/testing/test-driven-development/SKILL.md, skills/debugging/systematic-debugging/SKILL.md, skills/meta/writing-skills/SKILL.md
+Use process skills before implementation skills.
 
-## Announcing Skill Usage
+| Situation | First skill |
+|---|---|
+| New feature, build, rewrite, behavior change | `brainstorming` |
+| Written spec or requirements need an implementation plan | `writing-plans` |
+| Executing a plan with independent tasks | `subagent-driven-development` |
+| Executing a plan inline or without subagents | `executing-plans` |
+| Starting implementation work | `test-driven-development` |
+| Bug, test failure, or unexpected behavior | `systematic-debugging` |
+| Deep symptom with unclear original cause | `root-cause-tracing` |
+| Flaky async tests or sleeps/timeouts | `condition-based-waiting` |
+| Before claiming done/fixed/passing | `verification-before-completion` |
+| Before merge, PR, or major handoff | `requesting-code-review` |
+| Completing branch/worktree workflow | `finishing-a-development-branch` |
+| Writing or updating skills | `writing-skills` |
 
-After you've read a skill with Read tool, announce you're using it:
+## Flattened Trae Skills
 
-"I've read the [Skill Name] skill and I'm using it to [what you're doing]."
+Upstream Superpowers v5 keeps some techniques as reference files inside parent skills. This Trae package also exposes the most important references as first-class skills so they can trigger directly:
 
-**Examples:**
-- "I've read the Brainstorming skill and I'm using it to refine your idea into a design."
-- "I've read the Test-Driven Development skill and I'm using it to implement this feature."
-- "I've read the Systematic Debugging skill and I'm using it to find the root cause."
+- `condition-based-waiting`
+- `defense-in-depth`
+- `root-cause-tracing`
+- `testing-anti-patterns`
+- `testing-skills-with-subagents`
 
-**Why:** Transparency helps your human partner understand your process and catch errors early. It also confirms you actually read the skill.
+Use the flat skill name when the scenario matches, even if the parent skill also links to the same material.
 
-## How to Read a Skill
+## Red Flags
 
-Every skill has the same structure:
+These thoughts mean stop and invoke the relevant skill:
 
-1. **Frontmatter** - `when_to_use` tells you if this skill matches your situation
-2. **Overview** - Core principle in 1-2 sentences
-3. **Quick Reference** - Scan for your specific pattern
-4. **Implementation** - Full details and examples
-5. **Supporting files** - Load only when implementing
+| Thought | Reality |
+|---|---|
+| "This is just a simple question" | Questions are tasks. Check skills first. |
+| "I need more context first" | Skill check comes before context gathering. |
+| "Let me inspect files quickly" | Skills define how to inspect. |
+| "I remember this skill" | Skills evolve. Invoke the current one. |
+| "I'll code first and test later" | Use `test-driven-development` first. |
+| "The test failure is obvious" | Use `systematic-debugging` first. |
+| "I manually verified it" | Use `verification-before-completion` before success claims. |
+| "Task/general-purpose is a Claude thing" | In Trae, use the native `Task` tool with the template. |
 
-**Many skills contain rigid rules (TDD, debugging, verification).** Follow them exactly. Don't adapt away the discipline.
+## Memory
 
-**Some skills are flexible patterns (architecture, naming).** Adapt core principles to your context.
-
-The skill itself tells you which type it is.
-
-## Instructions ≠ Permission to Skip Workflows
-
-Your human partner's specific instructions describe WHAT to do, not HOW.
-
-"Add X", "Fix Y" = the goal, NOT permission to skip brainstorming, TDD, or RED-GREEN-REFACTOR.
-
-**Red flags:** "Instruction was specific" • "Seems simple" • "Workflow is overkill"
-
-**Why:** Specific instructions mean clear requirements, which is when workflows matter MOST. Skipping process on "simple" tasks is how simple tasks become complex problems.
-
-## Summary
-
-**Starting any task:**
-1. Run find-skills to check for relevant skills
-2. If relevant skill exists → Use Read tool with full path (includes /SKILL.md)
-3. Announce you're using it
-4. Follow what it says
-
-**Skill has checklist?** TodoWrite for every item.
-
-**Finding a relevant skill = mandatory to read and use it. Not optional.**
+For cross-session decisions, architecture constraints, and recurring project lessons, use Trae `manage_core_memory`. Do not install or run the old local conversation-indexing scripts.
