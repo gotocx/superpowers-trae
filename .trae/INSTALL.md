@@ -6,6 +6,7 @@ This file is an instruction document, not a script.
 - Never treat this file as a command, a manual-run target, or a deletion target before the cleanup gate is open.
 - Never create `.tmp-*`, `tmp`, `temp`, `.cache`, or any other temporary install directory.
 - Never clone, fetch, or download `obra/superpowers-skills` or any other remote repository during installation.
+- Never rename, copy, or clone this bootstrap repository again just to make its directory name match an example.
 
 ## 1. Minimal bootstrap package
 
@@ -18,6 +19,8 @@ The bootstrap repository is intentionally minimal. Its working tree should conta
 - `./.gitignore`
 
 A fresh clone may also contain `./.git`.
+
+Any direct child directory whose contents match this minimal structure is a bootstrap clone candidate. The directory name is not significant.
 
 ## 2. Required variables
 
@@ -36,7 +39,9 @@ If any variable is still ambiguous, do not proceed.
 
 ## 3. Root detection: allowed cases only
 
-You must first list the direct children of the current workspace root, then choose exactly one of these cases.
+You must first list the direct children of the current workspace root, count all bootstrap clone candidates, then choose exactly one of these cases.
+
+In nested mode, candidate directory names are not significant. `superpowers-trae`, `superpowers-trae-private`, or any other clone directory name may be valid if exactly one candidate exists. If there are zero candidates or more than one candidate, root detection fails. Do not rename, copy, clone again, or arbitrarily pick one candidate to continue.
 
 ### Case A: bootstrap mode
 
@@ -62,12 +67,13 @@ Variables:
 
 Conditions:
 
-- The current workspace root contains `./superpowers-trae`.
-- `./superpowers-trae` matches the minimal bootstrap package structure above.
+- The current workspace root contains exactly one direct child that is a bootstrap clone candidate.
+- That candidate matches the minimal bootstrap package structure above.
+- The candidate does not have to be named `superpowers-trae`.
 
 Variables:
 
-- `source_root = ./superpowers-trae`
+- `source_root = ./<only bootstrap clone candidate>`
 - `target_root = .`
 - `target_trae_path = ./.trae`
 
@@ -75,8 +81,8 @@ Variables:
 
 Conditions:
 
-- The current workspace root itself is named `superpowers-trae`.
-- The current workspace root matches the minimal bootstrap package structure above.
+- The current workspace root itself can be proven to be the bootstrap repository root.
+- The current workspace root matches the minimal bootstrap package structure above, regardless of directory name.
 - The parent directory is the real target project root.
 
 Variables:
@@ -110,6 +116,8 @@ If any path self-check fails:
 ## 5. Phase 1: copy or refresh target `.trae`
 
 Use only `source_root/.trae` as source material.
+
+Do not rename, duplicate, or reclone `source_root`. Its directory name does not affect installation eligibility.
 
 Allowed actions:
 
@@ -207,18 +215,25 @@ Cleanup is allowed only when all three are true:
 ### Cleanup in nested mode
 
 1. Delete `target_trae_path/INSTALL.md`.
-2. If `source_root` or `target_root/superpowers-trae` can be proven to be a redundant bootstrap clone candidate, delete that whole redundant `superpowers-trae` directory.
-3. At the very end, you may attempt one safe deletion of stale `./.tmp-superpowers-*` residue from older failed runs.
+2. Only attempt to delete the exact `source_root` selected during root detection.
+3. Before deleting `source_root`, verify that it is the only bootstrap clone candidate, its resolved absolute path is inside `target_root`, and it is neither `target_root` nor `target_trae_path`.
+4. Do not delete sibling directories or broaden cleanup to old failed clones. If multiple candidates exist, root detection should already have failed.
+5. Attempt recursive deletion of `source_root` at most once. If it fails, immediately follow the file-lock handling rules.
+6. Stale `./.tmp-superpowers-*` residue from older failed runs is not created by this flow. Report it by path instead of deleting it automatically.
 
 ## 10. File-lock handling
 
-If deleting the redundant bootstrap clone or stale residue fails because of a Windows file lock:
+If deleting `source_root` fails because of a Windows file lock:
 
 1. Stop cleanup immediately.
-2. Do not edit `target_trae_path` again.
-3. Do not roll back the installed `.trae`.
-4. Report the exact leftover path.
-5. Tell the user to close the locking process or restart the IDE/system and delete that leftover path manually.
+2. Do not try another deletion strategy.
+3. Do not use `cmd /c rmdir`.
+4. Do not hide cleanup failures with `SilentlyContinue`.
+5. Do not mass-change file attributes and retry recursive deletion.
+6. Do not edit `target_trae_path` again.
+7. Do not roll back the installed `.trae`.
+8. Report the exact leftover path.
+9. Tell the user to close the locking process or restart the IDE/system and delete that leftover path manually.
 
 ## 11. Success criteria
 
@@ -231,4 +246,4 @@ Installation may be declared successful only when all of the following are true:
 
 Nested failure example:
 
-- If the final result is `superpowers-trae/.trae` instead of `target_root/.trae`, installation is in the wrong directory and must not be reported as successful.
+- If the final result is `source_root/.trae` or any bootstrap candidate's `.trae` instead of `target_root/.trae`, installation is in the wrong directory and must not be reported as successful.
