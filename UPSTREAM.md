@@ -73,7 +73,7 @@ Trae uses project hooks at `.trae/hooks.json`. The migrated behavior is:
 - `SessionStart` injects the full `using-superpowers` skill at session start.
 - `UserPromptSubmit` injects a compact reminder before each user turn so the skill contract survives long sessions.
 - `PreToolUse` with matcher `RunCommand` blocks executing install Markdown as scripts, blocks recursive deletion of the active `.trae` runtime, and asks before destructive git cleanup.
-- stdout is used as Trae additional context for context hooks.
+- `SessionStart` and `UserPromptSubmit` emit Trae hook JSON with `hookSpecificOutput.additionalContext` for context injection.
 - Trae `PreToolUse` JSON output is used for command permission decisions.
 - Hook commands in `.trae/hooks.json` directly run readable PowerShell scripts in `.trae/hooks/`.
 - `.trae/hooks/validate-package.ps1` smoke-tests all hook registrations, hook outputs, required runtime files, required skills, and upstream support scripts.

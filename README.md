@@ -17,30 +17,54 @@ No separate memory setup is required. The persistent Superpowers reminders live 
 Open the target project in Trae, clone this repository if needed, then give the agent this prompt:
 
 ```text
-Install Superpowers for Trae into the current project.
+Install Superpowers for Trae into the current project from git.
 
-Use the cloned `gotocx/superpowers-trae` repository as the bootstrap source. Follow `README.md` and `INSTALL.md` as instruction documents only; do not execute Markdown files.
+1. First check whether the current target project already contains a `superpowers-trae` clone.
+   - If it does not exist, run:
+     git clone https://github.com/gotocx/superpowers-trae.git
+   - If it already exists, do not run git clone again during this install attempt.
 
-The install guide is `INSTALL.md` at the repository root.
-If a bootstrap clone already exists in the target project, do not run `git clone` again during this install attempt.
+2. Follow `superpowers-trae/README.md` and `superpowers-trae/INSTALL.md`.
+   They are instruction documents, not scripts. Do not execute Markdown files.
 
-Before moving, copying, or refreshing anything, compute and report:
-- source_root
-- target_root
-- target_trae_path
+3. Before moving, copying, or refreshing anything, compute and report:
+   - source_root
+   - target_root
+   - target_trae_path
 
-Then follow the install gates:
-1. Detect whether this is bootstrap mode, nested mode from target root, or nested mode while standing inside the bootstrap clone.
-2. Verify `target_trae_path` is the real target project's `.trae`, not the bootstrap clone's `.trae`.
-3. If `target_trae_path` does not exist, move `source_root/.trae` to `target_trae_path`. If `target_trae_path` already exists, copy or refresh hooks.json, hooks/, agents/, rules/, and all official skills from `source_root/.trae`.
-4. After moving, copying, or refreshing, run:
+4. Detect whether this is bootstrap mode, nested mode from target root, or nested mode while standing inside the bootstrap clone.
+
+5. Verify `target_trae_path` is the real target project's `.trae`, not the bootstrap clone's `.trae`.
+
+6. If `target_trae_path` does not exist, move `source_root/.trae` to `target_trae_path`.
+   If `target_trae_path` already exists, refresh only:
+   - hooks.json
+   - hooks/
+   - agents/
+   - rules/
+   - skills/
+
+7. After moving, copying, or refreshing, run from the target project root:
    powershell -NoProfile -ExecutionPolicy Bypass -File ./.trae/hooks/validate-package.ps1
-5. After validation, do not modify target `.trae` again.
-6. Do not delete `.trae/hooks.json`, `.trae/hooks/`, `.trae/agents/`, `.trae/rules/`, or `.trae/skills/`; they are runtime files.
-7. Delete the bootstrap clone only by running `./.trae/hooks/self-prune-source.ps1` from the target project root after validation. In bootstrap mode, do not delete anything automatically.
-8. Final `.trae` must contain `hooks.json`, `hooks/`, `agents/`, `rules/`, and `skills/`.
-9. If stale legacy entries exist inside target `.trae`, report them instead of deleting them automatically.
-10. Report evidence for each gate.
+
+8. No memory setup is required. Do not call manage_core_memory.
+
+9. After validation passes, do not modify target `.trae` again.
+   Final `.trae` must keep:
+   - hooks.json
+   - hooks/
+   - agents/
+   - rules/
+   - skills/
+
+10. Do not delete `.trae/hooks.json`, `.trae/hooks/`, `.trae/agents/`, `.trae/rules/`, or `.trae/skills/`.
+
+11. Delete the bootstrap source clone only by running this from the target project root:
+    powershell -NoProfile -ExecutionPolicy Bypass -File ./.trae/hooks/self-prune-source.ps1 -SourceRoot "<source_root>" -TargetRoot "<target_root>" -TargetTraePath "<target_trae_path>"
+
+12. If the source clone cannot be removed because of a Windows file lock, report the leftover path. Do not use another delete command and do not run git clone again.
+
+13. Report evidence for each gate.
 ```
 
 ## Hook validation

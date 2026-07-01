@@ -122,6 +122,40 @@ function Invoke-HookCommand {
     }
 }
 
+function Get-HookAdditionalContext {
+    param(
+        [object]$Result,
+        [string]$EventName,
+        [string]$Description
+    )
+
+    $raw = $Result.Stdout.Trim()
+    if ([string]::IsNullOrWhiteSpace($raw)) {
+        Add-Failure "$Description hook did not write JSON output"
+        return ""
+    }
+
+    try {
+        $json = $raw | ConvertFrom-Json
+        if (-not $json.hookSpecificOutput) {
+            Add-Failure "$Description hook output is missing hookSpecificOutput"
+            return ""
+        }
+        if ($json.hookSpecificOutput.hookEventName -ne $EventName) {
+            Add-Failure "$Description hook output has hookEventName $($json.hookSpecificOutput.hookEventName), expected $EventName"
+        }
+        if ([string]::IsNullOrWhiteSpace([string]$json.hookSpecificOutput.additionalContext)) {
+            Add-Failure "$Description hook output is missing additionalContext"
+            return ""
+        }
+        return [string]$json.hookSpecificOutput.additionalContext
+    }
+    catch {
+        Add-Failure "$Description hook output is not valid Trae hook JSON: $($_.Exception.Message)"
+        return ""
+    }
+}
+
 $traeRoot = Join-Path $RepoRoot ".trae"
 $hooksJsonPath = Join-Path $traeRoot "hooks.json"
 $sessionHookPath = Join-Path $traeRoot "hooks/session-start.ps1"
@@ -217,9 +251,9 @@ if (Test-Path -LiteralPath $rulePath) {
         'Rule Reinforcement',
         '.trae/hooks.json',
         'self-prune-source.ps1',
-        'Skill(name="using-superpowers")',
-        'Skill(name="systematic-debugging")',
-        'Skill(name="verification-before-completion")',
+        '.trae/skills/using-superpowers/SKILL.md',
+        'systematic-debugging',
+        'verification-before-completion',
         'Trae `TodoWrite`'
     )) {
         if ($ruleText -notmatch [regex]::Escape($requiredRuleText)) {
@@ -285,21 +319,21 @@ if (Test-Path -LiteralPath $hooksJsonPath) {
 if ($sessionCommand) {
     try {
         $result = Invoke-HookCommand $sessionCommand
-        $output = $result.Output
         if ($result.ExitCode -ne 0) {
             Add-Failure "SessionStart hook exited with code $($result.ExitCode)"
         }
-        if ($output -notmatch "<EXTREMELY_IMPORTANT>") {
-            Add-Failure "SessionStart hook output is missing EXTREMELY_IMPORTANT wrapper"
+        $context = Get-HookAdditionalContext $result "SessionStart" "SessionStart"
+        if ($context -notmatch "<EXTREMELY_IMPORTANT>") {
+            Add-Failure "SessionStart hook additionalContext is missing EXTREMELY_IMPORTANT wrapper"
         }
-        if ($output -notmatch "Using Superpowers in Trae") {
-            Add-Failure "SessionStart hook output does not include using-superpowers skill content"
+        if ($context -notmatch "Using Superpowers in Trae") {
+            Add-Failure "SessionStart hook additionalContext does not include using-superpowers skill content"
         }
-        if ($output -notmatch 'Skill\(name="<skill>"\)') {
-            Add-Failure "SessionStart hook output does not include Trae Skill invocation mapping"
+        if ($context -notmatch '\.trae/skills/<name>/SKILL\.md') {
+            Add-Failure "SessionStart hook additionalContext does not include Trae automatic skill fallback mapping"
         }
-        if ($output.Length -gt 50000) {
-            Add-Failure "SessionStart hook output is too large ($($output.Length) chars); keep runtime context compact"
+        if ($context.Length -gt 50000) {
+            Add-Failure "SessionStart hook additionalContext is too large ($($context.Length) chars); keep runtime context compact"
         }
     }
     catch {
@@ -310,18 +344,20 @@ if ($sessionCommand) {
 if ($promptCommand) {
     try {
         $result = Invoke-HookCommand $promptCommand
-        $output = $result.Output
         if ($result.ExitCode -ne 0) {
             Add-Failure "UserPromptSubmit hook exited with code $($result.ExitCode)"
         }
-        if ($output -notmatch "<SUPERPOWERS_RUNTIME_REMINDER>") {
-            Add-Failure "UserPromptSubmit hook output is missing SUPERPOWERS_RUNTIME_REMINDER wrapper"
+        $context = Get-HookAdditionalContext $result "UserPromptSubmit" "UserPromptSubmit"
+        if ($context -notmatch "<SUPERPOWERS_RUNTIME_REMINDER>") {
+            Add-Failure "UserPromptSubmit hook additionalContext is missing SUPERPOWERS_RUNTIME_REMINDER wrapper"
         }
-        if ($output -notmatch "verification-before-completion") {
-            Add-Failure "UserPromptSubmit hook output does not remind about completion verification"
+        foreach ($requiredPromptContext in @("executing-plans", "test-driven-development", "verification-before-completion")) {
+            if ($context -notmatch [regex]::Escape($requiredPromptContext)) {
+                Add-Failure "UserPromptSubmit hook additionalContext does not remind about $requiredPromptContext"
+            }
         }
-        if ($output.Length -gt 2000) {
-            Add-Failure "UserPromptSubmit hook output is too large ($($output.Length) chars); keep per-turn context compact"
+        if ($context.Length -gt 2000) {
+            Add-Failure "UserPromptSubmit hook additionalContext is too large ($($context.Length) chars); keep per-turn context compact"
         }
     }
     catch {

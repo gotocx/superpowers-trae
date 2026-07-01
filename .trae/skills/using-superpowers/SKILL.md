@@ -1,6 +1,6 @@
 ---
 name: using-superpowers
-description: Use when starting any conversation in Trae - establishes mandatory skill invocation, Trae tool mapping, and workflow priority before any response or action
+description: Use when starting any conversation in Trae - establishes mandatory skill activation, Trae tool mapping, and workflow priority before any response or action
 ---
 
 <SUBAGENT-STOP>
@@ -8,9 +8,9 @@ If you were dispatched by Trae Task as a subagent for a specific task, skip this
 </SUBAGENT-STOP>
 
 <EXTREMELY-IMPORTANT>
-If you think there is even a 1% chance a skill might apply to what you are doing, you MUST invoke the Trae Skill tool before responding or acting.
+If you think there is even a 1% chance a skill might apply to what you are doing, you MUST use that Trae skill before responding or acting.
 
-If a skill applies, you do not have a choice. Use it.
+Trae may auto-load matching skills as context. If the required skill is not already visible in context, open or read `.trae/skills/<skill>/SKILL.md` before acting.
 
 This is not negotiable. You cannot rationalize your way out of this.
 </EXTREMELY-IMPORTANT>
@@ -19,7 +19,7 @@ This is not negotiable. You cannot rationalize your way out of this.
 
 ## Runtime Bootstrap
 
-Trae should load this skill automatically through `.trae/hooks.json` on `SessionStart`. The same hook file also reinforces the workflow on `UserPromptSubmit` and guards risky `RunCommand` calls on `PreToolUse`. If you are in a Trae session and this skill was not injected, invoke `Skill(name="using-superpowers")` before doing any task work.
+Trae should load this skill automatically through `.trae/hooks.json` on `SessionStart`. The same hook file also reinforces the workflow on `UserPromptSubmit` and guards risky `RunCommand` calls on `PreToolUse`. If you are in a Trae session and this skill was not injected, open or read `.trae/skills/using-superpowers/SKILL.md` before doing any task work.
 
 The runtime has four cooperating layers:
 
@@ -47,22 +47,22 @@ When upstream Superpowers text mentions another harness, translate it to Trae:
 
 | Upstream wording | In Trae |
 |---|---|
-| `Skill` tool, `superpowers:<name>` | `Skill(name="<name>")` |
+| `Skill` tool, `superpowers:<name>` | Trae auto-loaded skill context, or manually open/read `.trae/skills/<name>/SKILL.md` |
 | `TodoWrite` | Trae `TodoWrite` task list |
 | `Task tool (general-purpose)` | Trae `Task` subagent with the provided prompt template; use a matching `.trae/agents` named subagent when available |
 | `Read`, `Write`, `Edit` | Trae file tools |
 | `Bash` | Trae terminal/shell tool |
 | local conversation memory scripts | not used in this Trae package |
 
-Do not use legacy `find-skills`, `skill-run`, or `remembering-conversations` scripts in Trae. Skill discovery and invocation must happen through the native Skill tool and the project rules.
+Do not use legacy `find-skills`, `skill-run`, or `remembering-conversations` scripts in Trae. Skill discovery and activation are Trae-native and may appear as referenced context rather than an explicit tool call in the trajectory.
 
 ## The Rule
 
-Invoke relevant or requested skills before any response, clarification, file read, shell command, implementation, or status claim.
+Use relevant or requested skills before any response, clarification, file read, shell command, implementation, or status claim.
 
-Before entering plan mode or implementation planning: if you have not already brainstormed the work, invoke `Skill(name="brainstorming")` first.
+Before entering plan mode or implementation planning: if you have not already brainstormed the work, use `brainstorming` first.
 
-If you invoke a skill:
+If you use a skill:
 
 1. Announce briefly: "I'm using `<skill>` to `<purpose>`."
 2. If the skill has a checklist or multi-step process, create Trae `TodoWrite` items for the steps.
@@ -113,8 +113,8 @@ These Trae package skills are shipped at the same install level as upstream skil
 
 Examples:
 
-- "Let's build X" -> `Skill(name="brainstorming")` first, then implementation/domain skills.
-- "Fix this bug" -> `Skill(name="systematic-debugging")` first, then domain skills.
+- "Let's build X" -> `brainstorming` first, then implementation/domain skills.
+- "Fix this bug" -> `systematic-debugging` first, then domain skills.
 
 ## Flattened Trae Skills
 
@@ -130,7 +130,7 @@ Use the flat skill name when the scenario matches, even if the parent skill also
 
 ## Red Flags
 
-These thoughts mean stop and invoke the relevant skill:
+These thoughts mean stop and use the relevant skill:
 
 | Thought | Reality |
 |---|---|
@@ -140,12 +140,12 @@ These thoughts mean stop and invoke the relevant skill:
 | "I can check git/files quickly" | Files lack conversation context. Check skills first. |
 | "Let me gather information first" | Skills tell you how to gather information. |
 | "This doesn't need a formal skill" | If a skill exists, use it. |
-| "I remember this skill" | Skills evolve. Invoke the current one. |
+| "I remember this skill" | Skills evolve. Use the current one. |
 | "This doesn't count as a task" | Action equals task. Check skills first. |
 | "The skill is overkill" | Simple things become complex. Use it. |
 | "I'll just do this one thing first" | Check before doing anything. |
 | "This feels productive" | Undisciplined action wastes time. Skills prevent this. |
-| "I know what that means" | Knowing the concept is not the same as using the skill. Invoke it. |
+| "I know what that means" | Knowing the concept is not the same as using the skill. Use it. |
 | "I'll code first and test later" | Use `test-driven-development` first. |
 | "The test failure is obvious" | Use `systematic-debugging` first. |
 | "I manually verified it" | Use `verification-before-completion` before success claims. |
