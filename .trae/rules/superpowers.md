@@ -33,7 +33,29 @@ Translate upstream Superpowers tool names to Trae native tools:
 
 Do not use old `find-skills`, `skill-run`, or `remembering-conversations` scripts in Trae. Skill activation is Trae-native and may appear as referenced context rather than an explicit tool call in the trajectory.
 
-## 4. Mandatory Skill Triggers
+## 4. Subagent Selection
+
+When delegating work, the candidate pool includes both Trae's built-in subagents and the Superpowers named subagents in `.trae/agents/`. Choose the strongest available subagent for the current development need.
+
+Strength means:
+
+1. The agent's description covers more of the user's actual goal.
+2. The agent is more specialized for the current phase: implementation, task review, code review, plan review, debugging, research, or verification.
+3. The agent carries the right workflow obligations, including tests, evidence, read-only review, or report format.
+4. The agent avoids irrelevant scope and does not require hidden context.
+
+Prefer these Superpowers agents when their role matches exactly:
+
+- `superpowers-implementer` for task-scoped implementation from a brief.
+- `superpowers-task-reviewer` for reviewing one implemented task against its brief and report.
+- `superpowers-code-reviewer` for broad review after a completed feature or before merge.
+- `superpowers-plan-reviewer` for reviewing an implementation plan before execution.
+
+If a Trae built-in subagent better covers the user's current domain or tool need, use that instead. If no subagent is clearly stronger or Trae Task is unavailable, work inline and state why.
+
+Do not report `.trae/agents` or a named Superpowers subagent as missing unless you have listed `.trae/agents` from the current target root in the same turn and confirmed the current working directory. If an agent was visible or successfully invoked earlier, do not later claim it is absent; treat any failure as a task/runtime failure and choose the next strongest agent or continue inline.
+
+## 5. Mandatory Skill Triggers
 
 Use the matching skill before responding or acting. If Trae did not auto-load it, manually open or read its `SKILL.md`.
 
@@ -93,7 +115,7 @@ Use the matching skill before responding or acting. If Trae did not auto-load it
 | Creating, editing, migrating, or testing skills | `writing-skills` |
 | Testing skill behavior with pressure scenarios | `testing-skills-with-subagents` |
 
-## 5. Flattened Skill Compatibility
+## 6. Flattened Skill Compatibility
 
 Upstream Superpowers v5 keeps several techniques as reference files inside parent skills. This Trae package intentionally exposes the important ones as flat skills so trigger matching stays reliable:
 
@@ -105,11 +127,11 @@ Upstream Superpowers v5 keeps several techniques as reference files inside paren
 
 If a scenario matches one of these, call the flat skill directly.
 
-## 6. Required Task Tracking
+## 7. Required Task Tracking
 
-When a skill contains a checklist, phase list, graph, or multi-step process, the first action after invoking it is to create Trae `TodoWrite` items for those steps. Mark items complete as work actually completes.
+When a skill contains a checklist, phase list, graph, or multi-step process, the first action after using it is to create Trae `TodoWrite` items for those steps. Mark items complete as work actually completes.
 
-## 7. Rule Reinforcement
+## 8. Rule Reinforcement
 
 This rule file is the persistent Superpowers reinforcement layer for Trae. Do not require a separate memory payload or a memory tool to make Superpowers work.
 
@@ -122,10 +144,12 @@ This rule file is the persistent Superpowers reinforcement layer for Trae. Do no
 - Before production code, use `test-driven-development`.
 - Before claiming done, fixed, passing, installed, or updated, use `verification-before-completion` and cite real evidence.
 - Upstream `Task tool (general-purpose)` means Trae `Task`; upstream `TodoWrite` means Trae `TodoWrite`.
-- Use named Trae subagents from `.trae/agents/` when they fit, but still pass complete task prompts and file paths.
+- Choose the strongest subagent from both Trae built-ins and `.trae/agents/`; prefer Superpowers named agents only when their role fits the current work best.
+- Do not claim `.trae/agents` is missing without a same-turn directory listing from the target root.
+- Always pass complete task prompts, file paths, constraints, and expected evidence to subagents.
 - Multi-step skill workflows must be tracked with Trae `TodoWrite`.
 
-## 8. Runtime Contract
+## 9. Runtime Contract
 
 - **Hook:** `.trae/hooks.json` registers `SessionStart`, `UserPromptSubmit`, and `PreToolUse` hooks that call readable scripts in `.trae/hooks/`.
 - **Agents:** `.trae/agents/*.md` defines named subagents Trae can auto-load.
@@ -139,7 +163,7 @@ This rule file is the persistent Superpowers reinforcement layer for Trae. Do no
 
 During Superpowers installation or upgrade, never delete `.trae/hooks.json`, `.trae/hooks/`, `.trae/agents/`, `.trae/rules/`, or `.trae/skills/`. These are runtime files, not removable residue. If a nested bootstrap clone must be removed, use `.trae/hooks/self-prune-source.ps1`; do not reclone after the target runtime has already validated.
 
-## 9. Anti-Rationalization Checks
+## 10. Anti-Rationalization Checks
 
 If any of these thoughts appear, stop and use the relevant skill:
 

@@ -252,6 +252,8 @@ if (Test-Path -LiteralPath $rulePath) {
         '.trae/hooks.json',
         'self-prune-source.ps1',
         '.trae/skills/using-superpowers/SKILL.md',
+        'strongest subagent',
+        'Do not claim `.trae/agents` is missing',
         'systematic-debugging',
         'verification-before-completion',
         'Trae `TodoWrite`'
@@ -351,7 +353,7 @@ if ($promptCommand) {
         if ($context -notmatch "<SUPERPOWERS_RUNTIME_REMINDER>") {
             Add-Failure "UserPromptSubmit hook additionalContext is missing SUPERPOWERS_RUNTIME_REMINDER wrapper"
         }
-        foreach ($requiredPromptContext in @("executing-plans", "test-driven-development", "verification-before-completion")) {
+        foreach ($requiredPromptContext in @("executing-plans", "test-driven-development", "strongest available subagent", "Do not claim .trae/agents is missing", "verification-before-completion")) {
             if ($context -notmatch [regex]::Escape($requiredPromptContext)) {
                 Add-Failure "UserPromptSubmit hook additionalContext does not remind about $requiredPromptContext"
             }

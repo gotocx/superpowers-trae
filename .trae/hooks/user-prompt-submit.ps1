@@ -22,6 +22,8 @@ Before responding or acting, check whether Trae auto-loaded a relevant Superpowe
 
 Implementation or behavior changes require test-driven-development: create/modify the test first, run it and observe the expected failure, then write production code.
 Written numbered implementation plans require executing-plans, then test-driven-development before production code.
+For delegation, choose the strongest available subagent from Trae built-ins plus .trae/agents; strongest means best coverage of the user's current development need and required verification/review obligations.
+Do not claim .trae/agents is missing unless you listed it from the current target root in this turn.
 Bugs and failed tests require systematic-debugging.
 Completion claims require verification-before-completion with real command output or observable state.
 </SUPERPOWERS_RUNTIME_REMINDER>

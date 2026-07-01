@@ -56,6 +56,28 @@ When upstream Superpowers text mentions another harness, translate it to Trae:
 
 Do not use legacy `find-skills`, `skill-run`, or `remembering-conversations` scripts in Trae. Skill discovery and activation are Trae-native and may appear as referenced context rather than an explicit tool call in the trajectory.
 
+## Subagent Selection
+
+When delegating work, choose from the full available pool: Trae built-in subagents plus Superpowers named subagents in `.trae/agents/`. Pick the strongest agent for the user's current development need.
+
+Strongest means the agent has the best fit across:
+
+- Goal coverage: its description covers the user's actual requested work.
+- Phase specialization: implementation, task review, code review, plan review, debugging, research, or verification.
+- Workflow obligations: tests, evidence, read-only review, report format, or constraints.
+- Scope control: it can work from the provided prompt and files without relying on hidden chat history.
+
+Use these Superpowers agents when they match exactly:
+
+- `superpowers-implementer` for task-scoped implementation from a brief.
+- `superpowers-task-reviewer` for one-task review against a brief, report, and diff package.
+- `superpowers-code-reviewer` for broad code review after a completed feature or before merge.
+- `superpowers-plan-reviewer` for implementation-plan review before execution.
+
+If a Trae built-in subagent covers the current domain or tool need better, use the built-in agent. If no subagent is clearly stronger or Trae Task is unavailable, work inline and state why.
+
+Do not claim `.trae/agents` or a named Superpowers subagent is missing unless you have listed `.trae/agents` from the current target root in the same turn and confirmed the current working directory. If an agent was visible or invoked earlier, any later failure is a task/runtime failure, not proof that the agent directory disappeared.
+
 ## The Rule
 
 Use relevant or requested skills before any response, clarification, file read, shell command, implementation, or status claim.
@@ -68,7 +90,7 @@ If you use a skill:
 2. If the skill has a checklist or multi-step process, create Trae `TodoWrite` items for the steps.
 3. Follow the skill exactly unless the user explicitly overrides it.
 
-If a skill contains prompt templates such as `implementer-prompt.md` or `code-reviewer.md`, load the template and pass its completed content to Trae Task. Prefer the matching named subagent from `.trae/agents/` when available:
+If a skill contains prompt templates such as `implementer-prompt.md` or `code-reviewer.md`, load the template and pass its completed content to the strongest available Trae Task subagent:
 
 - `superpowers-implementer` for `subagent-driven-development/implementer-prompt.md`
 - `superpowers-task-reviewer` for `subagent-driven-development/task-reviewer-prompt.md`
