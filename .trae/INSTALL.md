@@ -20,7 +20,7 @@ The bootstrap repository is intentionally minimal. Its working tree should conta
 
 A fresh clone may also contain `./.git`.
 
-The `.trae` directory is the install payload. Before cleanup, it also contains install audit documents and validation scripts. After cleanup, the target project's `.trae` must contain only runtime payload: hooks, rules, skills, and memory.
+The `.trae` directory is the install payload. Before cleanup, it also contains install audit documents, validation scripts, hook templates, and the canonical memory payload. After cleanup, the target project's `.trae` must contain only runtime payload: `hooks.json`, `rules/`, and `skills/`.
 
 Any direct child directory whose contents match this minimal structure is a bootstrap clone candidate. The directory name is not significant.
 
@@ -233,26 +233,18 @@ Cleanup is allowed only when both base runtime gates are true:
 - Gate 1 path self-check passed.
 - Gate 2 target `.trae` verification passed.
 
-Final runtime `.trae` must be clean. Delete these install-only files after Gate 2 has passed:
+Final runtime `.trae` must be clean. Delete these install-only files and directories after Gate 2 has passed:
 
 - `target_trae_path/INSTALL.md`
 - `target_trae_path/UPSTREAM.md`
-- `target_trae_path/hooks/README.md`
-- `target_trae_path/hooks/validate-package.ps1`
+- `target_trae_path/hooks/`
+- `target_trae_path/memory/`
 
 After cleanup, the target `.trae` top level must contain only:
 
 - `hooks.json`
-- `hooks/`
 - `rules/`
 - `skills/`
-- `memory/`
-
-The final `hooks/` directory must contain only runtime hook scripts:
-
-- `session-start.ps1`
-- `user-prompt-submit.ps1`
-- `pre-run-command-guard.ps1`
 
 ### Cleanup in bootstrap mode
 
@@ -294,15 +286,11 @@ Installation may be declared successful only when all of the following are true:
 1. `target_trae_path` is located under the correct `target_root`.
 2. `target_trae_path/rules/superpowers.md` exists.
 3. `target_trae_path/hooks.json` exists and defines `SessionStart`, `UserPromptSubmit`, and `PreToolUse` hooks.
-4. `target_trae_path/hooks/session-start.ps1` exists.
-5. `target_trae_path/hooks/user-prompt-submit.ps1` exists.
-6. `target_trae_path/hooks/pre-run-command-guard.ps1` exists.
-7. `target_trae_path/skills/` exists and contains the core skills.
-8. `target_trae_path/memory/superpowers.md` exists.
-9. The package validator passed before cleanup, or the same checks were manually verified if PowerShell was unavailable.
-10. The final `.trae` top level contains only `hooks.json`, `hooks/`, `rules/`, `skills/`, and `memory/`.
-11. The final `.trae/hooks/` directory contains only `session-start.ps1`, `user-prompt-submit.ps1`, and `pre-run-command-guard.ps1`.
-12. `INSTALL.md`, `UPSTREAM.md`, `hooks/README.md`, and `hooks/validate-package.ps1` are absent from the final target `.trae`.
+4. `target_trae_path/hooks.json` is self-contained and does not reference `target_trae_path/hooks/`.
+5. `target_trae_path/skills/` exists and contains the core skills.
+6. The package validator passed before cleanup, or the same checks were manually verified if PowerShell was unavailable.
+7. The final `.trae` top level contains only `hooks.json`, `rules/`, and `skills/`.
+8. `INSTALL.md`, `UPSTREAM.md`, `hooks/`, and `memory/` are absent from the final target `.trae`.
 
 Memory may be declared configured only when Gate 3 passes. If Gate 3 is pending or unavailable, say "base installation complete; memory alignment pending" instead of "full installation complete."
 

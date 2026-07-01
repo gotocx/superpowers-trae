@@ -74,12 +74,12 @@ Trae uses project hooks at `.trae/hooks.json`. The migrated behavior is:
 - `PreToolUse` with matcher `RunCommand` blocks executing install Markdown as scripts, blocks recursive deletion of the active `.trae` runtime, and asks before destructive git cleanup.
 - stdout is used as Trae additional context for context hooks.
 - Trae `PreToolUse` JSON output is used for command permission decisions.
-- PowerShell scripts are the default because Trae on Windows can run them without depending on Git Bash.
+- Hook commands are encoded directly into `.trae/hooks.json` so the final installed runtime does not need a `.trae/hooks/` directory.
 - `.trae/hooks/validate-package.ps1` smoke-tests all hook registrations, hook outputs, required runtime files, required skills, and upstream support scripts.
 
 Do not copy upstream hook commands verbatim; they depend on plugin root variables such as `CLAUDE_PLUGIN_ROOT`. Port behavior, not harness-specific paths.
 
-Trae `UserPromptSubmit` and `PreToolUse` are Trae-specific hardening layers. They are not upstream parity requirements, but they are part of this package's install contract and must be validated before release.
+Trae `UserPromptSubmit` and `PreToolUse` are Trae-specific hardening layers. They are not upstream parity requirements, but they are part of this package's install contract and must be validated before release. The `.trae/hooks/` directory is install-only and should be removed from target projects after validation.
 
 ## Script migration contract
 

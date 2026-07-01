@@ -114,17 +114,17 @@ When a skill contains a checklist, phase list, graph, or multi-step process, the
 
 Use `manage_core_memory` for persistent project decisions, architectural constraints, recurring lessons, and Superpowers workflow reminders. Do not run the old local conversation-indexing tools.
 
-For Superpowers installation or upgrade, use `.trae/memory/superpowers.md` as the canonical memory payload after hooks, rules, and skills have been verified. Delete any same-title old memory, add the new payload, then confirm the same title if Trae supports readback. If memory tooling is unavailable, keep the verified hooks/rules/skills install and report memory alignment as pending.
+For Superpowers installation or upgrade, the installer uses the package memory payload before cleanup. Delete any same-title old memory, add the new payload with `manage_core_memory`, then confirm the same title if Trae supports readback. After cleanup, persistent memory lives in Trae memory, not in a `.trae/memory` directory. If memory tooling is unavailable, keep the verified hooks/rules/skills install and report memory alignment as pending.
 
 ## 8. Runtime Contract
 
-- **Hook:** `.trae/hooks.json` registers `SessionStart`, `UserPromptSubmit`, and `PreToolUse` hooks.
-- **SessionStart:** `.trae/hooks/session-start.ps1` injects the full `using-superpowers` skill.
-- **UserPromptSubmit:** `.trae/hooks/user-prompt-submit.ps1` injects a compact per-turn reminder.
-- **PreToolUse:** `.trae/hooks/pre-run-command-guard.ps1` checks `RunCommand` for install and cleanup hazards.
+- **Hook:** `.trae/hooks.json` is self-contained and registers `SessionStart`, `UserPromptSubmit`, and `PreToolUse` hooks.
+- **SessionStart:** injects the full `using-superpowers` skill.
+- **UserPromptSubmit:** injects a compact per-turn reminder.
+- **PreToolUse:** checks `RunCommand` for install and cleanup hazards.
 - **Rule:** `.trae/rules/superpowers.md` defines non-negotiable trigger constraints.
 - **Skill:** `.trae/skills/*/SKILL.md` contains the actual workflow instructions.
-- **Memory:** `.trae/memory/superpowers.md` is copied into `manage_core_memory` for cross-session reinforcement.
+- **Memory:** persistent reinforcement is stored through Trae `manage_core_memory` during installation.
 
 ## 9. Anti-Rationalization Checks
 

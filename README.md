@@ -10,7 +10,7 @@ AI 安装指令（变量 + 阶段门槛版）
 1) 最小引导仓库结构
 - 本引导仓库默认分支应只包含: `./.trae`、`./README.md`、`./LICENSE`、`./NOTICE.md`、`./.gitignore`。
 - fresh clone 场景下,还会额外存在 `./.git`。
-- `./.trae` 是安装载荷,内部包含 rules、skills、Trae hooks、hook 验证脚本、同步审计文件和标准记忆载荷。安装清理完成后,目标项目 `.trae` 必须只保留运行时载荷: `hooks.json`、`hooks/`、`rules/`、`skills/`、`memory/`。
+- `./.trae` 是安装载荷,内部包含 rules、skills、Trae hooks、hook 验证脚本、同步审计文件和标准记忆载荷。安装清理完成后,目标项目 `.trae` 必须只保留运行时载荷: `hooks.json`、`rules/`、`skills/`。
 - 若某个直接子目录（目录名不限）同时包含 `./README.md`、`./LICENSE`、`./NOTICE.md`、`./.gitignore`、`./.trae/`,则它可以被识别为“引导仓库副本候选”。
 
 2) 必须先定义的变量
@@ -160,19 +160,13 @@ AI 安装指令（变量 + 阶段门槛版）
 - 记忆对齐结果不阻断清理,但会影响最终表述: 记忆未通过时只能说“基础安装完成;记忆对齐待完成”。
 - 清理后目标 `.trae` 顶层只能保留:
   - `hooks.json`
-  - `hooks/`
   - `rules/`
   - `skills/`
-  - `memory/`
-- 清理后目标 `.trae/hooks/` 只能保留:
-  - `session-start.ps1`
-  - `user-prompt-submit.ps1`
-  - `pre-run-command-guard.ps1`
 - 以下安装期文件必须从目标 `.trae` 删除:
   - `INSTALL.md`
   - `UPSTREAM.md`
-  - `hooks/README.md`
-  - `hooks/validate-package.ps1`
+  - `hooks/`
+  - `memory/`
 
 bootstrap 模式清理:
 - 删除上面列出的安装期文件
@@ -203,13 +197,10 @@ nested 模式清理:
   - `target_trae_path/rules/superpowers.md` 存在
   - `target_trae_path/UPSTREAM.md` 存在
   - `target_trae_path/hooks.json` 存在且定义 `SessionStart`、`UserPromptSubmit`、`PreToolUse` hooks
-  - `target_trae_path/hooks/session-start.ps1` 存在
-  - `target_trae_path/hooks/user-prompt-submit.ps1` 存在
-  - `target_trae_path/hooks/pre-run-command-guard.ps1` 存在
+  - `target_trae_path/hooks.json` 自包含,不引用 `target_trae_path/hooks/`
   - `target_trae_path/skills/` 存在且包含核心技能
   - 包验证脚本在清理前通过,或 PowerShell 不可用时已手工完成同等检查
-  - 最终 `.trae` 顶层只保留 `hooks.json`、`hooks/`、`rules/`、`skills/`、`memory/`
-  - 最终 `.trae/hooks/` 只保留 `session-start.ps1`、`user-prompt-submit.ps1`、`pre-run-command-guard.ps1`
-  - `INSTALL.md`、`UPSTREAM.md`、`hooks/README.md`、`hooks/validate-package.ps1` 不存在于最终目标 `.trae`
+  - 最终 `.trae` 顶层只保留 `hooks.json`、`rules/`、`skills/`
+  - `INSTALL.md`、`UPSTREAM.md`、`hooks/`、`memory/` 不存在于最终目标 `.trae`
 - 只有记忆自检通过时,才允许宣称“完整安装完成且记忆已配置”。记忆未通过或工具不可用时,只能宣称“基础安装完成;记忆对齐待完成”。
 - nested 场景下,如果最终看到的是 `source_root/.trae` 或任何引导仓库候选目录内的 `.trae`,而不是 `target_root/.trae`,则必须判定为“安装到错误目录”,不能宣称完成。

@@ -3,8 +3,14 @@
 
 $ErrorActionPreference = "Stop"
 
-$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$traeRoot = Split-Path -Parent $scriptDir
+$scriptPath = $MyInvocation.MyCommand.Path
+if ([string]::IsNullOrWhiteSpace($scriptPath)) {
+    $traeRoot = Join-Path (Get-Location).Path ".trae"
+}
+else {
+    $scriptDir = Split-Path -Parent $scriptPath
+    $traeRoot = Split-Path -Parent $scriptDir
+}
 $skillPath = Join-Path $traeRoot "skills/using-superpowers/SKILL.md"
 
 foreach ($envFile in @($env:TRAE_ENV_FILE, $env:CLAUDE_ENV_FILE)) {

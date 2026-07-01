@@ -21,14 +21,14 @@ This is not negotiable. You cannot rationalize your way out of this.
 
 Trae should load this skill automatically through `.trae/hooks.json` on `SessionStart`. The same hook file also reinforces the workflow on `UserPromptSubmit` and guards risky `RunCommand` calls on `PreToolUse`. If you are in a Trae session and this skill was not injected, invoke `Skill(name="using-superpowers")` before doing any task work.
 
-The package has four cooperating layers:
+The runtime has four cooperating layers:
 
 | Layer | File | Purpose |
 |---|---|---|
-| Hook | `.trae/hooks.json` and `.trae/hooks/*.ps1` | inject this skill at session start, reinforce each prompt, and guard risky shell commands |
+| Hook | `.trae/hooks.json` | inject this skill at session start, reinforce each prompt, and guard risky shell commands |
 | Rule | `.trae/rules/superpowers.md` | keep mandatory triggers visible to the model |
 | Skill | `.trae/skills/*/SKILL.md` | provide the workflow instructions |
-| Memory | `.trae/memory/superpowers.md` copied via `manage_core_memory` | reinforce the contract across sessions |
+| Memory | Trae `manage_core_memory` | reinforce the contract across sessions |
 
 If these layers disagree, prefer direct user instructions first, then repository rules, then the current skill content.
 
@@ -147,12 +147,12 @@ These thoughts mean stop and invoke the relevant skill:
 
 For cross-session decisions, architecture constraints, and recurring project lessons, use Trae `manage_core_memory`. Do not install or run the old local conversation-indexing scripts.
 
-For Superpowers itself, `.trae/memory/superpowers.md` is the canonical memory payload. During install or upgrade, add it only after hooks, rules, and skills pass verification. If memory cannot be configured, keep working from the hook/rule/skill layers and report memory alignment as pending.
+For Superpowers itself, memory is added during installation through Trae `manage_core_memory`. After cleanup, memory should live in Trae memory, not in `.trae/memory`. If memory cannot be configured, keep working from the hook/rule/skill layers and report memory alignment as pending.
 
 ## Hook Health
 
 The expected Trae hook set is:
 
-- `SessionStart` -> `.trae/hooks/session-start.ps1`
-- `UserPromptSubmit` -> `.trae/hooks/user-prompt-submit.ps1`
-- `PreToolUse` matcher `RunCommand` -> `.trae/hooks/pre-run-command-guard.ps1`
+- `SessionStart` -> full `using-superpowers` bootstrap
+- `UserPromptSubmit` -> compact per-turn reminder
+- `PreToolUse` matcher `RunCommand` -> command guard

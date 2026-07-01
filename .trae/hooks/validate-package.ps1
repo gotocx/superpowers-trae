@@ -39,19 +39,92 @@ function Get-HookCommands {
     return $commands
 }
 
-function Invoke-WithStdin {
+function Get-EncodedCommandPayload {
     param(
-        [string]$ScriptPath,
-        [string]$InputText
+        [string]$Command
     )
 
-    $oldIn = [Console]::In
-    try {
-        [Console]::SetIn([System.IO.StringReader]::new($InputText))
-        return (& $ScriptPath 2>&1 | Out-String)
+    if ($Command -notmatch '(?i)(?:^|\s)-EncodedCommand\s+([A-Za-z0-9+/=]+)(?:\s|$)') {
+        return $null
     }
-    finally {
-        [Console]::SetIn($oldIn)
+
+    return $Matches[1]
+}
+
+function Get-DecodedHookScript {
+    param(
+        [string]$Command
+    )
+
+    $encoded = Get-EncodedCommandPayload $Command
+    if (-not $encoded) {
+        return $null
+    }
+
+    return [Text.Encoding]::Unicode.GetString([Convert]::FromBase64String($encoded))
+}
+
+function Normalize-Text {
+    param([string]$Text)
+    return (($Text -replace "`r`n", "`n") -replace "`r", "`n").TrimEnd()
+}
+
+function Test-HookTemplateMatch {
+    param(
+        [string]$Command,
+        [string]$TemplatePath,
+        [string]$Description
+    )
+
+    $decoded = Get-DecodedHookScript $Command
+    if (-not $decoded) {
+        Add-Failure "$Description command is not self-contained with -EncodedCommand"
+        return
+    }
+
+    $source = Get-Content -LiteralPath $TemplatePath -Raw -Encoding UTF8
+    if ((Normalize-Text $decoded) -ne (Normalize-Text $source)) {
+        Add-Failure "$Description encoded command does not match $TemplatePath"
+    }
+}
+
+function Invoke-HookCommand {
+    param(
+        [string]$Command,
+        [string]$InputText = ""
+    )
+
+    $encoded = Get-EncodedCommandPayload $Command
+    if (-not $encoded) {
+        throw "Hook command is missing -EncodedCommand"
+    }
+
+    $startInfo = New-Object System.Diagnostics.ProcessStartInfo
+    $startInfo.FileName = "powershell"
+    $startInfo.Arguments = "-NoProfile -ExecutionPolicy Bypass -EncodedCommand $encoded"
+    $startInfo.WorkingDirectory = $RepoRoot
+    $startInfo.RedirectStandardInput = $true
+    $startInfo.RedirectStandardOutput = $true
+    $startInfo.RedirectStandardError = $true
+    $startInfo.UseShellExecute = $false
+    $startInfo.CreateNoWindow = $true
+
+    $process = New-Object System.Diagnostics.Process
+    $process.StartInfo = $startInfo
+    [void]$process.Start()
+    if ($InputText) {
+        $process.StandardInput.Write($InputText)
+    }
+    $process.StandardInput.Close()
+    $stdout = $process.StandardOutput.ReadToEnd()
+    $stderr = $process.StandardError.ReadToEnd()
+    $process.WaitForExit()
+
+    return [pscustomobject]@{
+        ExitCode = $process.ExitCode
+        Output = ($stdout + $stderr)
+        Stdout = $stdout
+        Stderr = $stderr
     }
 }
 
@@ -60,6 +133,9 @@ $hooksJsonPath = Join-Path $traeRoot "hooks.json"
 $sessionHookPath = Join-Path $traeRoot "hooks/session-start.ps1"
 $promptHookPath = Join-Path $traeRoot "hooks/user-prompt-submit.ps1"
 $guardHookPath = Join-Path $traeRoot "hooks/pre-run-command-guard.ps1"
+$sessionCommand = $null
+$promptCommand = $null
+$guardCommand = $null
 
 Test-RequiredPath ".trae/rules/superpowers.md" "Trae Superpowers rule"
 Test-RequiredPath ".trae/UPSTREAM.md" "upstream sync status"
@@ -132,14 +208,28 @@ if (Test-Path -LiteralPath $hooksJsonPath) {
             }
         }
 
-        $sessionCommands = Get-HookCommands $hooksConfig "SessionStart"
-        if (-not ($sessionCommands | Where-Object { $_ -match "\.trae[/\\]hooks[/\\]session-start\.ps1" })) {
-            Add-Failure "hooks.SessionStart does not call .trae/hooks/session-start.ps1"
+        $sessionCommands = @(Get-HookCommands $hooksConfig "SessionStart")
+        if ($sessionCommands.Count -ne 1) {
+            Add-Failure "hooks.SessionStart should define exactly one command hook"
+        }
+        else {
+            $sessionCommand = $sessionCommands[0]
+            if ($sessionCommand -match "\.trae[/\\]hooks[/\\]") {
+                Add-Failure "hooks.SessionStart must be self-contained and must not reference .trae/hooks runtime scripts"
+            }
+            Test-HookTemplateMatch $sessionCommand $sessionHookPath "hooks.SessionStart"
         }
 
-        $promptCommands = Get-HookCommands $hooksConfig "UserPromptSubmit"
-        if (-not ($promptCommands | Where-Object { $_ -match "\.trae[/\\]hooks[/\\]user-prompt-submit\.ps1" })) {
-            Add-Failure "hooks.UserPromptSubmit does not call .trae/hooks/user-prompt-submit.ps1"
+        $promptCommands = @(Get-HookCommands $hooksConfig "UserPromptSubmit")
+        if ($promptCommands.Count -ne 1) {
+            Add-Failure "hooks.UserPromptSubmit should define exactly one command hook"
+        }
+        else {
+            $promptCommand = $promptCommands[0]
+            if ($promptCommand -match "\.trae[/\\]hooks[/\\]") {
+                Add-Failure "hooks.UserPromptSubmit must be self-contained and must not reference .trae/hooks runtime scripts"
+            }
+            Test-HookTemplateMatch $promptCommand $promptHookPath "hooks.UserPromptSubmit"
         }
 
         $preToolGroups = @($hooksConfig.hooks.PreToolUse)
@@ -147,9 +237,16 @@ if (Test-Path -LiteralPath $hooksJsonPath) {
             Add-Failure "hooks.PreToolUse does not define matcher RunCommand"
         }
 
-        $preToolCommands = Get-HookCommands $hooksConfig "PreToolUse"
-        if (-not ($preToolCommands | Where-Object { $_ -match "\.trae[/\\]hooks[/\\]pre-run-command-guard\.ps1" })) {
-            Add-Failure "hooks.PreToolUse does not call .trae/hooks/pre-run-command-guard.ps1"
+        $preToolCommands = @(Get-HookCommands $hooksConfig "PreToolUse")
+        if ($preToolCommands.Count -ne 1) {
+            Add-Failure "hooks.PreToolUse should define exactly one command hook"
+        }
+        else {
+            $guardCommand = $preToolCommands[0]
+            if ($guardCommand -match "\.trae[/\\]hooks[/\\]") {
+                Add-Failure "hooks.PreToolUse must be self-contained and must not reference .trae/hooks runtime scripts"
+            }
+            Test-HookTemplateMatch $guardCommand $guardHookPath "hooks.PreToolUse"
         }
     }
     catch {
@@ -157,76 +254,78 @@ if (Test-Path -LiteralPath $hooksJsonPath) {
     }
 }
 
-if (Test-Path -LiteralPath $sessionHookPath) {
+if ($sessionCommand) {
     try {
-        $output = & $sessionHookPath 2>&1 | Out-String
-        if ($LASTEXITCODE -ne $null -and $LASTEXITCODE -ne 0) {
-            Add-Failure "session-start.ps1 exited with code $LASTEXITCODE"
+        $result = Invoke-HookCommand $sessionCommand
+        $output = $result.Output
+        if ($result.ExitCode -ne 0) {
+            Add-Failure "SessionStart encoded hook exited with code $($result.ExitCode)"
         }
         if ($output -notmatch "<EXTREMELY_IMPORTANT>") {
-            Add-Failure "session-start.ps1 output is missing EXTREMELY_IMPORTANT wrapper"
+            Add-Failure "SessionStart encoded hook output is missing EXTREMELY_IMPORTANT wrapper"
         }
         if ($output -notmatch "Using Superpowers in Trae") {
-            Add-Failure "session-start.ps1 output does not include using-superpowers skill content"
+            Add-Failure "SessionStart encoded hook output does not include using-superpowers skill content"
         }
         if ($output -notmatch 'Skill\(name="<skill>"\)') {
-            Add-Failure "session-start.ps1 output does not include Trae Skill invocation mapping"
+            Add-Failure "SessionStart encoded hook output does not include Trae Skill invocation mapping"
         }
         if ($output.Length -gt 50000) {
-            Add-Failure "session-start.ps1 output is too large ($($output.Length) chars); keep runtime context compact"
+            Add-Failure "SessionStart encoded hook output is too large ($($output.Length) chars); keep runtime context compact"
         }
     }
     catch {
-        Add-Failure "session-start.ps1 smoke test failed: $($_.Exception.Message)"
+        Add-Failure "SessionStart encoded hook smoke test failed: $($_.Exception.Message)"
     }
 }
 
-if (Test-Path -LiteralPath $promptHookPath) {
+if ($promptCommand) {
     try {
-        $output = & $promptHookPath 2>&1 | Out-String
-        if ($LASTEXITCODE -ne $null -and $LASTEXITCODE -ne 0) {
-            Add-Failure "user-prompt-submit.ps1 exited with code $LASTEXITCODE"
+        $result = Invoke-HookCommand $promptCommand
+        $output = $result.Output
+        if ($result.ExitCode -ne 0) {
+            Add-Failure "UserPromptSubmit encoded hook exited with code $($result.ExitCode)"
         }
         if ($output -notmatch "<SUPERPOWERS_RUNTIME_REMINDER>") {
-            Add-Failure "user-prompt-submit.ps1 output is missing SUPERPOWERS_RUNTIME_REMINDER wrapper"
+            Add-Failure "UserPromptSubmit encoded hook output is missing SUPERPOWERS_RUNTIME_REMINDER wrapper"
         }
         if ($output -notmatch "verification-before-completion") {
-            Add-Failure "user-prompt-submit.ps1 output does not remind about completion verification"
+            Add-Failure "UserPromptSubmit encoded hook output does not remind about completion verification"
         }
         if ($output.Length -gt 2000) {
-            Add-Failure "user-prompt-submit.ps1 output is too large ($($output.Length) chars); keep per-turn context compact"
+            Add-Failure "UserPromptSubmit encoded hook output is too large ($($output.Length) chars); keep per-turn context compact"
         }
     }
     catch {
-        Add-Failure "user-prompt-submit.ps1 smoke test failed: $($_.Exception.Message)"
+        Add-Failure "UserPromptSubmit encoded hook smoke test failed: $($_.Exception.Message)"
     }
 }
 
-if (Test-Path -LiteralPath $guardHookPath) {
+if ($guardCommand) {
     try {
         $allowInput = '{"hook_event_name":"PreToolUse","tool_name":"RunCommand","tool_input":{"command":"git status --short"}}'
-        $allowOutput = Invoke-WithStdin $guardHookPath $allowInput
+        $allowOutput = (Invoke-HookCommand $guardCommand $allowInput).Stdout
         $allowJson = $allowOutput | ConvertFrom-Json
         if ($allowJson.hookSpecificOutput.permissionDecision -ne "allow") {
-            Add-Failure "pre-run-command-guard.ps1 did not allow a benign RunCommand payload"
+            Add-Failure "PreToolUse encoded hook did not allow a benign RunCommand payload"
         }
 
         $denyInput = '{"hook_event_name":"PreToolUse","tool_name":"RunCommand","tool_input":{"command":"powershell -File ./.trae/INSTALL.md"}}'
-        $denyOutput = Invoke-WithStdin $guardHookPath $denyInput
+        $denyOutput = (Invoke-HookCommand $guardCommand $denyInput).Stdout
         $denyJson = $denyOutput | ConvertFrom-Json
         if ($denyJson.hookSpecificOutput.permissionDecision -ne "deny") {
-            Add-Failure "pre-run-command-guard.ps1 did not deny executing Markdown as a script"
+            Add-Failure "PreToolUse encoded hook did not deny executing Markdown as a script"
         }
 
         $askInput = '{"hook_event_name":"PreToolUse","tool_name":"RunCommand","tool_input":{"command":"git reset --hard"}}'
-        $askOutput = Invoke-WithStdin $guardHookPath $askInput
+        $askOutput = (Invoke-HookCommand $guardCommand $askInput).Stdout
         $askJson = $askOutput | ConvertFrom-Json
         if ($askJson.hookSpecificOutput.permissionDecision -ne "ask") {
-            Add-Failure "pre-run-command-guard.ps1 did not ask before destructive git cleanup"
+            Add-Failure "PreToolUse encoded hook did not ask before destructive git cleanup"
         }
     }
     catch {
-        Add-Failure "pre-run-command-guard.ps1 smoke test failed: $($_.Exception.Message)"
+        Add-Failure "PreToolUse encoded hook smoke test failed: $($_.Exception.Message)"
     }
 }
 
@@ -253,4 +352,4 @@ if ($failures.Count -gt 0) {
 }
 
 Write-Output "Superpowers for Trae validation passed."
-Write-Output "Checked rules, 3 Trae hooks, hook smoke output, memory payload, $($requiredSkills.Count) skills, and $($requiredSkillScripts.Count) upstream support scripts."
+Write-Output "Checked rules, 3 self-contained Trae hooks, hook smoke output, memory payload, $($requiredSkills.Count) skills, and $($requiredSkillScripts.Count) upstream support scripts."
