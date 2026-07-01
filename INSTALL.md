@@ -15,15 +15,18 @@ The bootstrap repository working tree should contain only:
 
 - `./.trae`
 - `./README.md`
+- `./INSTALL.md`
+- `./UPSTREAM.md`
 - `./LICENSE`
 - `./NOTICE.md`
 - `./.gitignore`
 
 A fresh clone may also contain `./.git`.
 
-The `.trae` directory is the install payload. Before cleanup, it contains runtime files plus install audit and validation files. After cleanup, the target project's `.trae` must contain only:
+The `.trae` directory is the complete Trae runtime payload. After installation, the target project's `.trae` must contain:
 
 - `hooks.json`
+- `hooks/`
 - `rules/`
 - `skills/`
 
@@ -48,7 +51,7 @@ First list the direct children of the current workspace root and count all boots
 Conditions:
 
 - The current workspace root is the bootstrap repository root.
-- Its direct children are limited to `.git`, `.trae`, `README.md`, `LICENSE`, `NOTICE.md`, and `.gitignore`.
+- Its direct children are limited to `.git`, `.trae`, `README.md`, `INSTALL.md`, `UPSTREAM.md`, `LICENSE`, `NOTICE.md`, and `.gitignore`.
 
 Variables:
 
@@ -108,17 +111,15 @@ Allowed actions:
 
 1. Create `target_trae_path` only if missing.
 2. Refresh `target_trae_path/rules/superpowers.md`.
-3. Refresh `target_trae_path/UPSTREAM.md`.
-4. Refresh `target_trae_path/hooks.json`.
-5. Refresh `target_trae_path/hooks/`.
-6. Copy missing official skills from `source_root/.trae/skills/`.
-7. Refresh same-name official skills from `source_root/.trae/skills/`.
-8. Preserve user custom rules and non-conflicting custom skills in the target project.
+3. Refresh `target_trae_path/hooks.json`.
+4. Refresh `target_trae_path/hooks/`.
+5. Copy missing official skills from `source_root/.trae/skills/`.
+6. Refresh same-name official skills from `source_root/.trae/skills/`.
+7. Preserve user custom rules and non-conflicting custom skills in the target project.
 
 Forbidden during Phase 1:
 
 - Deleting `target_trae_path/hooks.json`
-- Deleting `target_trae_path/INSTALL.md`
 - Deleting `source_root`
 - Deleting any bootstrap clone candidate
 - Deleting any user project directory
@@ -128,15 +129,13 @@ Forbidden during Phase 1:
 After Phase 1, verify all of the following:
 
 1. `target_trae_path/rules/superpowers.md` exists.
-2. `target_trae_path/UPSTREAM.md` exists.
-3. `target_trae_path/hooks.json` exists.
-4. `target_trae_path/hooks/session-start.ps1` exists.
-5. `target_trae_path/hooks/user-prompt-submit.ps1` exists.
-6. `target_trae_path/hooks/pre-run-command-guard.ps1` exists.
-7. `target_trae_path/hooks/validate-package.ps1` exists.
-8. `target_trae_path/hooks/README.md` exists.
-9. `target_trae_path/skills/` exists.
-10. `target_trae_path/skills/` contains at least these core skills:
+2. `target_trae_path/hooks.json` exists.
+3. `target_trae_path/hooks/session-start.ps1` exists.
+4. `target_trae_path/hooks/user-prompt-submit.ps1` exists.
+5. `target_trae_path/hooks/pre-run-command-guard.ps1` exists.
+6. `target_trae_path/hooks/validate-package.ps1` exists.
+7. `target_trae_path/skills/` exists.
+8. `target_trae_path/skills/` contains at least these core skills:
    - `using-superpowers`
    - `brainstorming`
    - `collision-zone-thinking`
@@ -164,7 +163,7 @@ After Phase 1, verify all of the following:
    - `when-stuck`
    - `writing-plans`
    - `writing-skills`
-11. Run the package validator from the target project root when PowerShell is available:
+9. Run the package validator from the target project root when PowerShell is available:
 
    ```powershell
    powershell -NoProfile -ExecutionPolicy Bypass -File ./.trae/hooks/validate-package.ps1
@@ -173,7 +172,6 @@ After Phase 1, verify all of the following:
 If Gate 2 fails:
 
 - Do not enter cleanup.
-- Do not delete `target_trae_path/INSTALL.md`.
 - Do not delete `source_root`.
 - Report that `.trae` verification failed.
 
@@ -184,29 +182,25 @@ Cleanup is allowed only when both base runtime gates passed:
 - Gate 1 path self-check passed.
 - Gate 2 target `.trae` verification passed.
 
-Delete only these install-only entries from the target `.trae`:
-
-- `target_trae_path/INSTALL.md`
-- `target_trae_path/UPSTREAM.md`
-- `target_trae_path/hooks/`
-
+Do not delete any current runtime entry from `target_trae_path`. Keep `hooks.json`, `hooks/`, `rules/`, and `skills/`.
+If `target_trae_path/INSTALL.md` exists from an older install, delete it as stale install residue.
+If `target_trae_path/UPSTREAM.md` exists from an older install, delete it as stale install residue.
 If `target_trae_path/memory/` exists from an older install, delete it as stale install residue.
 
 Important cleanup guard:
 
-- Delete the exact `hooks/` directory only.
-- Do not use wildcard cleanup such as `.trae/hooks*`.
+- Do not delete `target_trae_path/hooks/`.
 - Do not delete `target_trae_path/hooks.json`.
-- Immediately after cleanup, verify `target_trae_path/hooks.json` still exists.
+- Immediately after cleanup, verify `target_trae_path/hooks.json` and `target_trae_path/hooks/` still exist.
 
 ### Cleanup in bootstrap mode
 
-1. Delete the install-only entries listed above from `./.trae`.
-2. Delete everything else in the working tree except `./.trae`, including `.git`, `README.md`, `LICENSE`, `NOTICE.md`, and `.gitignore`.
+1. Delete stale legacy entries from `./.trae` only if present: `INSTALL.md`, `UPSTREAM.md`, and `memory/`.
+2. Delete everything else in the working tree except `./.trae`, including `.git`, `README.md`, `INSTALL.md`, `UPSTREAM.md`, `LICENSE`, `NOTICE.md`, and `.gitignore`.
 
 ### Cleanup in nested mode
 
-1. Delete the install-only entries listed above from `target_trae_path`.
+1. Delete stale legacy entries from `target_trae_path` only if present: `INSTALL.md`, `UPSTREAM.md`, and `memory/`.
 2. Only attempt to delete the exact `source_root` selected during root detection.
 3. Before deleting `source_root`, verify that it is the only bootstrap clone candidate, its resolved absolute path is inside `target_root`, and it is neither `target_root` nor `target_trae_path`.
 4. Do not delete sibling directories or broaden cleanup to old failed clones.
@@ -233,12 +227,13 @@ Installation may be declared successful only when all of the following are true:
 1. `target_trae_path` is located under the correct `target_root`.
 2. `target_trae_path/rules/superpowers.md` exists.
 3. `target_trae_path/hooks.json` exists.
-4. `target_trae_path/hooks.json` defines `SessionStart`, `UserPromptSubmit`, and `PreToolUse` hooks.
-5. `target_trae_path/hooks.json` is self-contained and does not reference `target_trae_path/hooks/`.
-6. `target_trae_path/skills/` exists and contains the core skills.
-7. The package validator passed before cleanup, or equivalent manual checks passed if PowerShell was unavailable.
-8. The final `.trae` top level contains only `hooks.json`, `rules/`, and `skills/`.
-9. `INSTALL.md`, `UPSTREAM.md`, `hooks/`, and `memory/` are absent from the final target `.trae`.
+4. `target_trae_path/hooks/` exists and contains the readable hook scripts.
+5. `target_trae_path/hooks.json` defines `SessionStart`, `UserPromptSubmit`, and `PreToolUse` hooks.
+6. `target_trae_path/hooks.json` calls the scripts in `target_trae_path/hooks/`.
+7. `target_trae_path/skills/` exists and contains the core skills.
+8. The package validator passed, or equivalent manual checks passed if PowerShell was unavailable.
+9. The final `.trae` top level contains only `hooks.json`, `hooks/`, `rules/`, and `skills/`.
+10. `INSTALL.md`, `UPSTREAM.md`, and `memory/` are absent from the final target `.trae`.
 
 No memory setup is required. The persistent Superpowers reinforcement lives in `.trae/rules/superpowers.md`.
 

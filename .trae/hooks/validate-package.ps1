@@ -39,52 +39,44 @@ function Get-HookCommands {
     return $commands
 }
 
-function Get-EncodedCommandPayload {
+function Get-HookScriptRelativePath {
     param(
         [string]$Command
     )
 
-    if ($Command -notmatch '(?i)(?:^|\s)-EncodedCommand\s+([A-Za-z0-9+/=]+)(?:\s|$)') {
+    if ($Command -match '(?i)-EncodedCommand') {
         return $null
     }
 
-    return $Matches[1]
-}
-
-function Get-DecodedHookScript {
-    param(
-        [string]$Command
-    )
-
-    $encoded = Get-EncodedCommandPayload $Command
-    if (-not $encoded) {
+    if ($Command -notmatch '(?i)^powershell(?:\.exe)?\s+-NoProfile\s+-ExecutionPolicy\s+Bypass\s+-File\s+(.+)$') {
         return $null
     }
 
-    return [Text.Encoding]::Unicode.GetString([Convert]::FromBase64String($encoded))
+    $path = $Matches[1].Trim().Trim('"').Trim("'")
+    return (($path -replace "\\", "/") -replace '^\./', '')
 }
 
-function Normalize-Text {
-    param([string]$Text)
-    return (($Text -replace "`r`n", "`n") -replace "`r", "`n").TrimEnd()
-}
-
-function Test-HookTemplateMatch {
+function Test-HookScriptReference {
     param(
         [string]$Command,
-        [string]$TemplatePath,
+        [string]$ExpectedRelativePath,
         [string]$Description
     )
 
-    $decoded = Get-DecodedHookScript $Command
-    if (-not $decoded) {
-        Add-Failure "$Description command is not self-contained with -EncodedCommand"
+    $actualRelativePath = Get-HookScriptRelativePath $Command
+    if (-not $actualRelativePath) {
+        Add-Failure "$Description command must directly run a readable .trae/hooks/*.ps1 script with -File"
         return
     }
 
-    $source = Get-Content -LiteralPath $TemplatePath -Raw -Encoding UTF8
-    if ((Normalize-Text $decoded) -ne (Normalize-Text $source)) {
-        Add-Failure "$Description encoded command does not match $TemplatePath"
+    $expected = ($ExpectedRelativePath -replace "\\", "/")
+    if ($actualRelativePath -ne $expected) {
+        Add-Failure "$Description command references $actualRelativePath, expected $expected"
+    }
+
+    $fullPath = Join-Path $RepoRoot $ExpectedRelativePath
+    if (-not (Test-Path -LiteralPath $fullPath)) {
+        Add-Failure "$Description script does not exist at $ExpectedRelativePath"
     }
 }
 
@@ -94,14 +86,15 @@ function Invoke-HookCommand {
         [string]$InputText = ""
     )
 
-    $encoded = Get-EncodedCommandPayload $Command
-    if (-not $encoded) {
-        throw "Hook command is missing -EncodedCommand"
+    $relativePath = Get-HookScriptRelativePath $Command
+    if (-not $relativePath) {
+        throw "Hook command does not reference a script with -File"
     }
 
+    $scriptPath = Join-Path $RepoRoot $relativePath
     $startInfo = New-Object System.Diagnostics.ProcessStartInfo
     $startInfo.FileName = "powershell"
-    $startInfo.Arguments = "-NoProfile -ExecutionPolicy Bypass -EncodedCommand $encoded"
+    $startInfo.Arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$scriptPath`""
     $startInfo.WorkingDirectory = $RepoRoot
     $startInfo.RedirectStandardInput = $true
     $startInfo.RedirectStandardOutput = $true
@@ -138,9 +131,7 @@ $promptCommand = $null
 $guardCommand = $null
 
 Test-RequiredPath ".trae/rules/superpowers.md" "Trae Superpowers rule"
-Test-RequiredPath ".trae/UPSTREAM.md" "upstream sync status"
 Test-RequiredPath ".trae/hooks.json" "Trae hooks config"
-Test-RequiredPath ".trae/hooks/README.md" "hook documentation"
 Test-RequiredPath ".trae/hooks/session-start.ps1" "SessionStart hook"
 Test-RequiredPath ".trae/hooks/user-prompt-submit.ps1" "UserPromptSubmit hook"
 Test-RequiredPath ".trae/hooks/pre-run-command-guard.ps1" "PreToolUse RunCommand guard hook"
@@ -237,10 +228,7 @@ if (Test-Path -LiteralPath $hooksJsonPath) {
         }
         else {
             $sessionCommand = $sessionCommands[0]
-            if ($sessionCommand -match "\.trae[/\\]hooks[/\\]") {
-                Add-Failure "hooks.SessionStart must be self-contained and must not reference .trae/hooks runtime scripts"
-            }
-            Test-HookTemplateMatch $sessionCommand $sessionHookPath "hooks.SessionStart"
+            Test-HookScriptReference $sessionCommand ".trae/hooks/session-start.ps1" "hooks.SessionStart"
         }
 
         $promptCommands = @(Get-HookCommands $hooksConfig "UserPromptSubmit")
@@ -249,10 +237,7 @@ if (Test-Path -LiteralPath $hooksJsonPath) {
         }
         else {
             $promptCommand = $promptCommands[0]
-            if ($promptCommand -match "\.trae[/\\]hooks[/\\]") {
-                Add-Failure "hooks.UserPromptSubmit must be self-contained and must not reference .trae/hooks runtime scripts"
-            }
-            Test-HookTemplateMatch $promptCommand $promptHookPath "hooks.UserPromptSubmit"
+            Test-HookScriptReference $promptCommand ".trae/hooks/user-prompt-submit.ps1" "hooks.UserPromptSubmit"
         }
 
         $preToolGroups = @($hooksConfig.hooks.PreToolUse)
@@ -266,10 +251,7 @@ if (Test-Path -LiteralPath $hooksJsonPath) {
         }
         else {
             $guardCommand = $preToolCommands[0]
-            if ($guardCommand -match "\.trae[/\\]hooks[/\\]") {
-                Add-Failure "hooks.PreToolUse must be self-contained and must not reference .trae/hooks runtime scripts"
-            }
-            Test-HookTemplateMatch $guardCommand $guardHookPath "hooks.PreToolUse"
+            Test-HookScriptReference $guardCommand ".trae/hooks/pre-run-command-guard.ps1" "hooks.PreToolUse"
         }
     }
     catch {
@@ -282,23 +264,23 @@ if ($sessionCommand) {
         $result = Invoke-HookCommand $sessionCommand
         $output = $result.Output
         if ($result.ExitCode -ne 0) {
-            Add-Failure "SessionStart encoded hook exited with code $($result.ExitCode)"
+            Add-Failure "SessionStart hook exited with code $($result.ExitCode)"
         }
         if ($output -notmatch "<EXTREMELY_IMPORTANT>") {
-            Add-Failure "SessionStart encoded hook output is missing EXTREMELY_IMPORTANT wrapper"
+            Add-Failure "SessionStart hook output is missing EXTREMELY_IMPORTANT wrapper"
         }
         if ($output -notmatch "Using Superpowers in Trae") {
-            Add-Failure "SessionStart encoded hook output does not include using-superpowers skill content"
+            Add-Failure "SessionStart hook output does not include using-superpowers skill content"
         }
         if ($output -notmatch 'Skill\(name="<skill>"\)') {
-            Add-Failure "SessionStart encoded hook output does not include Trae Skill invocation mapping"
+            Add-Failure "SessionStart hook output does not include Trae Skill invocation mapping"
         }
         if ($output.Length -gt 50000) {
-            Add-Failure "SessionStart encoded hook output is too large ($($output.Length) chars); keep runtime context compact"
+            Add-Failure "SessionStart hook output is too large ($($output.Length) chars); keep runtime context compact"
         }
     }
     catch {
-        Add-Failure "SessionStart encoded hook smoke test failed: $($_.Exception.Message)"
+        Add-Failure "SessionStart hook smoke test failed: $($_.Exception.Message)"
     }
 }
 
@@ -307,20 +289,20 @@ if ($promptCommand) {
         $result = Invoke-HookCommand $promptCommand
         $output = $result.Output
         if ($result.ExitCode -ne 0) {
-            Add-Failure "UserPromptSubmit encoded hook exited with code $($result.ExitCode)"
+            Add-Failure "UserPromptSubmit hook exited with code $($result.ExitCode)"
         }
         if ($output -notmatch "<SUPERPOWERS_RUNTIME_REMINDER>") {
-            Add-Failure "UserPromptSubmit encoded hook output is missing SUPERPOWERS_RUNTIME_REMINDER wrapper"
+            Add-Failure "UserPromptSubmit hook output is missing SUPERPOWERS_RUNTIME_REMINDER wrapper"
         }
         if ($output -notmatch "verification-before-completion") {
-            Add-Failure "UserPromptSubmit encoded hook output does not remind about completion verification"
+            Add-Failure "UserPromptSubmit hook output does not remind about completion verification"
         }
         if ($output.Length -gt 2000) {
-            Add-Failure "UserPromptSubmit encoded hook output is too large ($($output.Length) chars); keep per-turn context compact"
+            Add-Failure "UserPromptSubmit hook output is too large ($($output.Length) chars); keep per-turn context compact"
         }
     }
     catch {
-        Add-Failure "UserPromptSubmit encoded hook smoke test failed: $($_.Exception.Message)"
+        Add-Failure "UserPromptSubmit hook smoke test failed: $($_.Exception.Message)"
     }
 }
 
@@ -330,46 +312,46 @@ if ($guardCommand) {
         $allowOutput = (Invoke-HookCommand $guardCommand $allowInput).Stdout
         $allowJson = $allowOutput | ConvertFrom-Json
         if ($allowJson.hookSpecificOutput.permissionDecision -ne "allow") {
-            Add-Failure "PreToolUse encoded hook did not allow a benign RunCommand payload"
+            Add-Failure "PreToolUse hook did not allow a benign RunCommand payload"
         }
 
-        $denyInput = '{"hook_event_name":"PreToolUse","tool_name":"RunCommand","tool_input":{"command":"powershell -File ./.trae/INSTALL.md"}}'
+        $denyInput = '{"hook_event_name":"PreToolUse","tool_name":"RunCommand","tool_input":{"command":"powershell -File ./INSTALL.md"}}'
         $denyOutput = (Invoke-HookCommand $guardCommand $denyInput).Stdout
         $denyJson = $denyOutput | ConvertFrom-Json
         if ($denyJson.hookSpecificOutput.permissionDecision -ne "deny") {
-            Add-Failure "PreToolUse encoded hook did not deny executing Markdown as a script"
+            Add-Failure "PreToolUse hook did not deny executing Markdown as a script"
         }
 
         $askInput = '{"hook_event_name":"PreToolUse","tool_name":"RunCommand","tool_input":{"command":"git reset --hard"}}'
         $askOutput = (Invoke-HookCommand $guardCommand $askInput).Stdout
         $askJson = $askOutput | ConvertFrom-Json
         if ($askJson.hookSpecificOutput.permissionDecision -ne "ask") {
-            Add-Failure "PreToolUse encoded hook did not ask before destructive git cleanup"
+            Add-Failure "PreToolUse hook did not ask before destructive git cleanup"
         }
 
         $hooksJsonDenyInput = '{"hook_event_name":"PreToolUse","tool_name":"RunCommand","tool_input":{"command":"Remove-Item .\\.trae\\hooks.json -Force"}}'
         $hooksJsonDenyOutput = (Invoke-HookCommand $guardCommand $hooksJsonDenyInput).Stdout
         $hooksJsonDeny = $hooksJsonDenyOutput | ConvertFrom-Json
         if ($hooksJsonDeny.hookSpecificOutput.permissionDecision -ne "deny") {
-            Add-Failure "PreToolUse encoded hook did not deny deleting .trae/hooks.json"
+            Add-Failure "PreToolUse hook did not deny deleting .trae/hooks.json"
         }
 
         $hooksWildcardDenyInput = '{"hook_event_name":"PreToolUse","tool_name":"RunCommand","tool_input":{"command":"Remove-Item .\\.trae\\hooks* -Recurse -Force"}}'
         $hooksWildcardDenyOutput = (Invoke-HookCommand $guardCommand $hooksWildcardDenyInput).Stdout
         $hooksWildcardDeny = $hooksWildcardDenyOutput | ConvertFrom-Json
         if ($hooksWildcardDeny.hookSpecificOutput.permissionDecision -ne "deny") {
-            Add-Failure "PreToolUse encoded hook did not deny .trae/hooks* wildcard cleanup"
+            Add-Failure "PreToolUse hook did not deny .trae/hooks* wildcard cleanup"
         }
 
-        $hooksDirAllowInput = '{"hook_event_name":"PreToolUse","tool_name":"RunCommand","tool_input":{"command":"Remove-Item .\\.trae\\hooks -Recurse -Force"}}'
-        $hooksDirAllowOutput = (Invoke-HookCommand $guardCommand $hooksDirAllowInput).Stdout
-        $hooksDirAllow = $hooksDirAllowOutput | ConvertFrom-Json
-        if ($hooksDirAllow.hookSpecificOutput.permissionDecision -ne "allow") {
-            Add-Failure "PreToolUse encoded hook did not allow exact .trae/hooks directory cleanup"
+        $hooksDirDenyInput = '{"hook_event_name":"PreToolUse","tool_name":"RunCommand","tool_input":{"command":"Remove-Item .\\.trae\\hooks -Recurse -Force"}}'
+        $hooksDirDenyOutput = (Invoke-HookCommand $guardCommand $hooksDirDenyInput).Stdout
+        $hooksDirDeny = $hooksDirDenyOutput | ConvertFrom-Json
+        if ($hooksDirDeny.hookSpecificOutput.permissionDecision -ne "deny") {
+            Add-Failure "PreToolUse hook did not deny deleting .trae/hooks"
         }
     }
     catch {
-        Add-Failure "PreToolUse encoded hook smoke test failed: $($_.Exception.Message)"
+        Add-Failure "PreToolUse hook smoke test failed: $($_.Exception.Message)"
     }
 }
 
@@ -382,4 +364,4 @@ if ($failures.Count -gt 0) {
 }
 
 Write-Output "Superpowers for Trae validation passed."
-Write-Output "Checked rules, 3 self-contained Trae hooks, hook smoke output, hook cleanup guards, $($requiredSkills.Count) skills, and $($requiredSkillScripts.Count) upstream support scripts."
+Write-Output "Checked rules, 3 readable Trae hooks, hook smoke output, hook cleanup guards, $($requiredSkills.Count) skills, and $($requiredSkillScripts.Count) upstream support scripts."

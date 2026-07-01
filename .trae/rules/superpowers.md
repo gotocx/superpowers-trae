@@ -125,7 +125,7 @@ This rule file is the persistent Superpowers reinforcement layer for Trae. Do no
 
 ## 8. Runtime Contract
 
-- **Hook:** `.trae/hooks.json` is self-contained and registers `SessionStart`, `UserPromptSubmit`, and `PreToolUse` hooks.
+- **Hook:** `.trae/hooks.json` registers `SessionStart`, `UserPromptSubmit`, and `PreToolUse` hooks that call readable scripts in `.trae/hooks/`.
 - **SessionStart:** injects the full `using-superpowers` skill.
 - **UserPromptSubmit:** injects a compact per-turn reminder.
 - **PreToolUse:** checks `RunCommand` for install and cleanup hazards.

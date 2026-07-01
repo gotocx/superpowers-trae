@@ -28,7 +28,7 @@ The following upstream skill directories are mechanically synced into `.trae/ski
 
 The following directories intentionally differ:
 
-- `using-superpowers`: Trae-specific bootstrap, tool mapping, hooks/rules/memory contract.
+- `using-superpowers`: Trae-specific bootstrap, tool mapping, and hooks/rules contract.
 - `subagent-driven-development`: upstream v6 task-brief/review-package/task-reviewer flow with Trae `Task`, `TodoWrite`, and `Skill(name=...)` wording.
 - `writing-skills/SKILL.md`: one upstream trailing space is removed so Trae package checks pass.
 
@@ -74,12 +74,12 @@ Trae uses project hooks at `.trae/hooks.json`. The migrated behavior is:
 - `PreToolUse` with matcher `RunCommand` blocks executing install Markdown as scripts, blocks recursive deletion of the active `.trae` runtime, and asks before destructive git cleanup.
 - stdout is used as Trae additional context for context hooks.
 - Trae `PreToolUse` JSON output is used for command permission decisions.
-- Hook commands are encoded directly into `.trae/hooks.json` so the final installed runtime does not need a `.trae/hooks/` directory.
+- Hook commands in `.trae/hooks.json` directly run readable PowerShell scripts in `.trae/hooks/`.
 - `.trae/hooks/validate-package.ps1` smoke-tests all hook registrations, hook outputs, required runtime files, required skills, and upstream support scripts.
 
 Do not copy upstream hook commands verbatim; they depend on plugin root variables such as `CLAUDE_PLUGIN_ROOT`. Port behavior, not harness-specific paths.
 
-Trae `UserPromptSubmit` and `PreToolUse` are Trae-specific hardening layers. They are not upstream parity requirements, but they are part of this package's install contract and must be validated before release. The `.trae/hooks/` directory is install-only and should be removed from target projects after validation.
+Trae `UserPromptSubmit` and `PreToolUse` are Trae-specific hardening layers. They are not upstream parity requirements, but they are part of this package's install contract and must be validated before release. The `.trae/hooks/` directory is runtime code and must remain installed.
 
 ## Script migration contract
 
