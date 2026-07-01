@@ -6,6 +6,7 @@ This repository is a bootstrap package, not a runtime dependency. After installa
 
 - `hooks.json`
 - `hooks/`
+- `agents/`
 - `rules/`
 - `skills/`
 
@@ -28,14 +29,14 @@ Before copying or deleting anything, compute and report:
 Then follow the install gates:
 1. Detect whether this is bootstrap mode, nested mode from target root, or nested mode while standing inside the bootstrap clone.
 2. Verify `target_trae_path` is the real target project's `.trae`, not the bootstrap clone's `.trae`.
-3. Copy or refresh rules, hooks.json, hooks/, and all official skills from `source_root/.trae`.
+3. Copy or refresh hooks.json, hooks/, agents/, rules/, and all official skills from `source_root/.trae`.
 4. Before cleanup, run:
    powershell -NoProfile -ExecutionPolicy Bypass -File ./.trae/hooks/validate-package.ps1
 5. Cleanup only after validation passes.
-6. Do not delete `.trae/hooks.json` or `.trae/hooks/`; they are runtime files.
+6. Do not delete `.trae/hooks.json`, `.trae/hooks/`, or `.trae/agents/`; they are runtime files.
 7. Delete only stale legacy entries from the target `.trae` if present: `.trae/INSTALL.md`, `.trae/UPSTREAM.md`, and legacy memory directory.
 8. Delete the bootstrap clone only if nested-mode path checks prove it is safe.
-9. Final `.trae` must contain only `hooks.json`, `hooks/`, `rules/`, and `skills/`.
+9. Final `.trae` must contain only `hooks.json`, `hooks/`, `agents/`, `rules/`, and `skills/`.
 10. Report evidence for each gate.
 ```
 
@@ -51,6 +52,7 @@ The validator checks:
 
 - `hooks.json` defines `SessionStart`, `UserPromptSubmit`, and `PreToolUse`.
 - `hooks.json` directly calls readable scripts in `.trae/hooks/`.
+- `.trae/agents/` contains the Superpowers named subagent definitions.
 - Required rules, skills, and upstream support scripts exist.
 - SessionStart, UserPromptSubmit, and PreToolUse smoke tests pass.
 
@@ -64,6 +66,13 @@ The final runtime hook config is `.trae/hooks.json`.
 
 `.trae/hooks/` is runtime code and must remain installed. Keeping scripts readable makes hook debugging and upgrades straightforward.
 
+`.trae/agents/` is runtime code too. When Trae's Subagents directory support is enabled, Trae auto-loads these named agents:
+
+- `superpowers-implementer`
+- `superpowers-task-reviewer`
+- `superpowers-code-reviewer`
+- `superpowers-plan-reviewer`
+
 ## Manual Trae acceptance checklist
 
 After installation, open the target project in Trae and verify:
@@ -74,6 +83,7 @@ After installation, open the target project in Trae and verify:
 4. `RunCommand` `powershell -File ./INSTALL.md` is denied.
 5. `RunCommand` `Remove-Item .\.trae\hooks.json -Force` is denied.
 6. `RunCommand` `Remove-Item .\.trae\hooks -Recurse -Force` is denied.
+7. `RunCommand` `Remove-Item .\.trae\agents -Recurse -Force` is denied.
 
 ## Upstream sync
 

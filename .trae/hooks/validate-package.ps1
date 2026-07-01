@@ -137,6 +137,25 @@ Test-RequiredPath ".trae/hooks/user-prompt-submit.ps1" "UserPromptSubmit hook"
 Test-RequiredPath ".trae/hooks/pre-run-command-guard.ps1" "PreToolUse RunCommand guard hook"
 Test-RequiredPath ".trae/hooks/validate-package.ps1" "package validator"
 
+$requiredAgents = @(
+    "superpowers-implementer",
+    "superpowers-task-reviewer",
+    "superpowers-code-reviewer",
+    "superpowers-plan-reviewer"
+)
+
+foreach ($agent in $requiredAgents) {
+    $relativePath = ".trae/agents/$agent.md"
+    Test-RequiredPath $relativePath "required agent $agent"
+    $fullPath = Join-Path $RepoRoot $relativePath
+    if (Test-Path -LiteralPath $fullPath) {
+        $agentText = Get-Content -LiteralPath $fullPath -Raw -Encoding UTF8
+        if ($agentText -notmatch "(?s)^---\s+.*name:\s*$agent\s+.*description:\s+.+?---") {
+            Add-Failure "Agent $agent is missing YAML frontmatter name/description"
+        }
+    }
+}
+
 $requiredSkills = @(
     "using-superpowers",
     "brainstorming",
@@ -349,6 +368,13 @@ if ($guardCommand) {
         if ($hooksDirDeny.hookSpecificOutput.permissionDecision -ne "deny") {
             Add-Failure "PreToolUse hook did not deny deleting .trae/hooks"
         }
+
+        $agentsDirDenyInput = '{"hook_event_name":"PreToolUse","tool_name":"RunCommand","tool_input":{"command":"Remove-Item .\\.trae\\agents -Recurse -Force"}}'
+        $agentsDirDenyOutput = (Invoke-HookCommand $guardCommand $agentsDirDenyInput).Stdout
+        $agentsDirDeny = $agentsDirDenyOutput | ConvertFrom-Json
+        if ($agentsDirDeny.hookSpecificOutput.permissionDecision -ne "deny") {
+            Add-Failure "PreToolUse hook did not deny deleting .trae/agents"
+        }
     }
     catch {
         Add-Failure "PreToolUse hook smoke test failed: $($_.Exception.Message)"
@@ -364,4 +390,4 @@ if ($failures.Count -gt 0) {
 }
 
 Write-Output "Superpowers for Trae validation passed."
-Write-Output "Checked rules, 3 readable Trae hooks, hook smoke output, hook cleanup guards, $($requiredSkills.Count) skills, and $($requiredSkillScripts.Count) upstream support scripts."
+Write-Output "Checked rules, $($requiredAgents.Count) named agents, 3 readable Trae hooks, hook smoke output, hook cleanup guards, $($requiredSkills.Count) skills, and $($requiredSkillScripts.Count) upstream support scripts."

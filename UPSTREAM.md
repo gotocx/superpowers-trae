@@ -30,6 +30,7 @@ The following directories intentionally differ:
 
 - `using-superpowers`: Trae-specific bootstrap, tool mapping, and hooks/rules contract.
 - `subagent-driven-development`: upstream v6 task-brief/review-package/task-reviewer flow with Trae `Task`, `TodoWrite`, and `Skill(name=...)` wording.
+- `.trae/agents`: Trae-specific named subagent definitions for upstream prompt-template roles.
 - `writing-skills/SKILL.md`: one upstream trailing space is removed so Trae package checks pass.
 
 The following flat Trae skills are generated from upstream reference files so Trae can trigger them directly:
@@ -80,6 +81,17 @@ Trae uses project hooks at `.trae/hooks.json`. The migrated behavior is:
 Do not copy upstream hook commands verbatim; they depend on plugin root variables such as `CLAUDE_PLUGIN_ROOT`. Port behavior, not harness-specific paths.
 
 Trae `UserPromptSubmit` and `PreToolUse` are Trae-specific hardening layers. They are not upstream parity requirements, but they are part of this package's install contract and must be validated before release. The `.trae/hooks/` directory is runtime code and must remain installed.
+
+## Subagent migration contract
+
+At upstream commit `f268f7c953744036f0fa7e9d4b73535c04e57cb8`, `.agents/` contains only Codex marketplace metadata and does not define runnable subagents. Current upstream subagent behavior lives in prompt templates:
+
+- `skills/subagent-driven-development/implementer-prompt.md`
+- `skills/subagent-driven-development/task-reviewer-prompt.md`
+- `skills/requesting-code-review/code-reviewer.md`
+- `skills/writing-plans/plan-document-reviewer-prompt.md`
+
+This Trae package exposes those roles as `.trae/agents/*.md` so Trae can auto-load named subagents while still using the upstream templates as the source of detailed behavior.
 
 ## Script migration contract
 

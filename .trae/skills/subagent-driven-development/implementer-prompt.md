@@ -3,7 +3,7 @@
 Use this template when dispatching an implementer subagent.
 
 ```
-Trae Task:
+Trae Task named agent `superpowers-implementer` when available; otherwise Trae Task:
   description: "Implement Task N: [task name]"
   model: [MODEL — REQUIRED: choose per SKILL.md Model Selection; an omitted
          model silently inherits the session's most expensive one]

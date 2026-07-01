@@ -7,7 +7,7 @@ Use this template when dispatching a plan document reviewer subagent.
 **Dispatch after:** The complete plan is written.
 
 ```
-Subagent (general-purpose):
+Trae Task named agent `superpowers-plan-reviewer` when available; otherwise Subagent (general-purpose):
   description: "Review plan document"
   prompt: |
     You are a plan document reviewer. Verify this plan is complete and ready for implementation.

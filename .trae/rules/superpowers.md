@@ -27,7 +27,7 @@ Translate upstream Superpowers tool names to Trae native tools:
 |---|---|
 | `superpowers:<skill>` or Skill tool | `Skill(name="<skill>")` |
 | `TodoWrite` | Trae `TodoWrite` |
-| `Task tool (general-purpose)` | Trae `Task` subagent with the completed prompt template |
+| `Task tool (general-purpose)` | Trae `Task` subagent with the completed prompt template; use `.trae/agents` named agents when one matches |
 | `Read`, `Write`, `Edit` | Trae file tools |
 | `Bash` | Trae shell/terminal |
 
@@ -114,6 +114,7 @@ When a skill contains a checklist, phase list, graph, or multi-step process, the
 This rule file is the persistent Superpowers reinforcement layer for Trae. Do not require a separate memory payload or a memory tool to make Superpowers work.
 
 - `.trae/hooks.json` must register `SessionStart`, `UserPromptSubmit`, and `PreToolUse` hooks.
+- `.trae/agents/` contains named subagent definitions for common Superpowers dispatch roles.
 - If `SessionStart` does not visibly inject `using-superpowers`, invoke `Skill(name="using-superpowers")` before any task work.
 - For bugs, failed tests, crashes, and unexpected behavior, invoke `Skill(name="systematic-debugging")` before proposing or applying a fix.
 - For deep call-stack symptoms or unclear origin, invoke `Skill(name="root-cause-tracing")`.
@@ -121,11 +122,13 @@ This rule file is the persistent Superpowers reinforcement layer for Trae. Do no
 - Before production code, invoke `Skill(name="test-driven-development")`.
 - Before claiming done, fixed, passing, installed, or updated, invoke `Skill(name="verification-before-completion")` and cite real evidence.
 - Upstream `Task tool (general-purpose)` means Trae `Task`; upstream `TodoWrite` means Trae `TodoWrite`.
+- Use named Trae subagents from `.trae/agents/` when they fit, but still pass complete task prompts and file paths.
 - Multi-step skill workflows must be tracked with Trae `TodoWrite`.
 
 ## 8. Runtime Contract
 
 - **Hook:** `.trae/hooks.json` registers `SessionStart`, `UserPromptSubmit`, and `PreToolUse` hooks that call readable scripts in `.trae/hooks/`.
+- **Agents:** `.trae/agents/*.md` defines named subagents Trae can auto-load.
 - **SessionStart:** injects the full `using-superpowers` skill.
 - **UserPromptSubmit:** injects a compact per-turn reminder.
 - **PreToolUse:** checks `RunCommand` for install and cleanup hazards.

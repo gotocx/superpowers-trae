@@ -26,6 +26,7 @@ The runtime has four cooperating layers:
 | Layer | File | Purpose |
 |---|---|---|
 | Hook | `.trae/hooks.json` | inject this skill at session start, reinforce each prompt, and guard risky shell commands |
+| Agent | `.trae/agents/*.md` | provide named subagents for common Superpowers dispatch roles |
 | Rule | `.trae/rules/superpowers.md` | keep mandatory triggers visible to the model |
 | Skill | `.trae/skills/*/SKILL.md` | provide the workflow instructions |
 | Rule reinforcement | `.trae/rules/superpowers.md` | keep the cross-session Superpowers contract without requiring Trae memory |
@@ -48,7 +49,7 @@ When upstream Superpowers text mentions another harness, translate it to Trae:
 |---|---|
 | `Skill` tool, `superpowers:<name>` | `Skill(name="<name>")` |
 | `TodoWrite` | Trae `TodoWrite` task list |
-| `Task tool (general-purpose)` | Trae `Task` subagent with the provided prompt template |
+| `Task tool (general-purpose)` | Trae `Task` subagent with the provided prompt template; use a matching `.trae/agents` named subagent when available |
 | `Read`, `Write`, `Edit` | Trae file tools |
 | `Bash` | Trae terminal/shell tool |
 | local conversation memory scripts | not used in this Trae package |
@@ -67,7 +68,14 @@ If you invoke a skill:
 2. If the skill has a checklist or multi-step process, create Trae `TodoWrite` items for the steps.
 3. Follow the skill exactly unless the user explicitly overrides it.
 
-If a skill contains prompt templates such as `implementer-prompt.md` or `code-reviewer.md`, load the template and pass its completed content to Trae Task. Do not rely on session history as a substitute for the template.
+If a skill contains prompt templates such as `implementer-prompt.md` or `code-reviewer.md`, load the template and pass its completed content to Trae Task. Prefer the matching named subagent from `.trae/agents/` when available:
+
+- `superpowers-implementer` for `subagent-driven-development/implementer-prompt.md`
+- `superpowers-task-reviewer` for `subagent-driven-development/task-reviewer-prompt.md`
+- `superpowers-code-reviewer` for `requesting-code-review/code-reviewer.md`
+- `superpowers-plan-reviewer` for `writing-plans/plan-document-reviewer-prompt.md`
+
+Do not rely on session history as a substitute for the template or referenced files.
 
 ## Skill Priority
 

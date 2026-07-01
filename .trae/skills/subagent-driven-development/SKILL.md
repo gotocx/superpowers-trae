@@ -13,7 +13,7 @@ Execute plan by dispatching a fresh implementer subagent per task, a task review
 
 ## Trae Adaptation
 
-When this skill says "Subagent (general-purpose)", use Trae native `Task` with the completed prompt template. When it references `superpowers:<skill>`, invoke Trae native `Skill(name="<skill>")`. When it says to create todos, use Trae `TodoWrite`.
+When this skill says "Subagent (general-purpose)", use Trae native `Task` with the completed prompt template. Prefer the named agents in `.trae/agents/` when they match: `superpowers-implementer`, `superpowers-task-reviewer`, and `superpowers-code-reviewer`. When it references `superpowers:<skill>`, invoke Trae native `Skill(name="<skill>")`. When it says to create todos, use Trae `TodoWrite`.
 
 **Narration:** between tool calls, narrate at most one short line — the
 ledger and the tool results carry the record.

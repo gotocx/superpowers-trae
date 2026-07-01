@@ -59,9 +59,9 @@ $checks = @(
         Reason = 'Refusing to recursively delete the active .trae runtime. Disable this hook only if the user explicitly asks to remove Superpowers.'
     },
     @{
-        Pattern = '(?i)(^|[\s;&|])(?:rm|del|erase|Remove-Item|rmdir)\b[^\r\n;&|]*["'']?\.?[/\\]?\.trae[/\\]hooks(?:\.json|[/\\]?|\*)["'']?(?:[\s;&|]|$)'
+        Pattern = '(?i)(^|[\s;&|])(?:rm|del|erase|Remove-Item|rmdir)\b[^\r\n;&|]*["'']?\.?[/\\]?\.trae[/\\](?:hooks(?:\.json|[/\\]?|\*)|agents(?:[/\\]?|\*))["'']?(?:[\s;&|]|$)'
         Decision = 'deny'
-        Reason = 'hooks.json and .trae/hooks/ are runtime hook files and must survive installation.'
+        Reason = 'hooks.json, .trae/hooks/, and .trae/agents/ are runtime files and must survive installation.'
     },
     @{
         Pattern = '(?i)(^|[\s;&|])git\s+(?:reset\s+--hard|clean\s+-[^\r\n;&|]*x)'

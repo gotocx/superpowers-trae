@@ -27,6 +27,7 @@ The `.trae` directory is the complete Trae runtime payload. After installation, 
 
 - `hooks.json`
 - `hooks/`
+- `agents/`
 - `rules/`
 - `skills/`
 
@@ -113,9 +114,10 @@ Allowed actions:
 2. Refresh `target_trae_path/rules/superpowers.md`.
 3. Refresh `target_trae_path/hooks.json`.
 4. Refresh `target_trae_path/hooks/`.
-5. Copy missing official skills from `source_root/.trae/skills/`.
-6. Refresh same-name official skills from `source_root/.trae/skills/`.
-7. Preserve user custom rules and non-conflicting custom skills in the target project.
+5. Refresh `target_trae_path/agents/`.
+6. Copy missing official skills from `source_root/.trae/skills/`.
+7. Refresh same-name official skills from `source_root/.trae/skills/`.
+8. Preserve user custom rules, custom agents, and non-conflicting custom skills in the target project.
 
 Forbidden during Phase 1:
 
@@ -134,8 +136,14 @@ After Phase 1, verify all of the following:
 4. `target_trae_path/hooks/user-prompt-submit.ps1` exists.
 5. `target_trae_path/hooks/pre-run-command-guard.ps1` exists.
 6. `target_trae_path/hooks/validate-package.ps1` exists.
-7. `target_trae_path/skills/` exists.
-8. `target_trae_path/skills/` contains at least these core skills:
+7. `target_trae_path/agents/` exists.
+8. `target_trae_path/agents/` contains at least these agent definitions:
+   - `superpowers-implementer.md`
+   - `superpowers-task-reviewer.md`
+   - `superpowers-code-reviewer.md`
+   - `superpowers-plan-reviewer.md`
+9. `target_trae_path/skills/` exists.
+10. `target_trae_path/skills/` contains at least these core skills:
    - `using-superpowers`
    - `brainstorming`
    - `collision-zone-thinking`
@@ -163,7 +171,7 @@ After Phase 1, verify all of the following:
    - `when-stuck`
    - `writing-plans`
    - `writing-skills`
-9. Run the package validator from the target project root when PowerShell is available:
+11. Run the package validator from the target project root when PowerShell is available:
 
    ```powershell
    powershell -NoProfile -ExecutionPolicy Bypass -File ./.trae/hooks/validate-package.ps1
@@ -182,7 +190,7 @@ Cleanup is allowed only when both base runtime gates passed:
 - Gate 1 path self-check passed.
 - Gate 2 target `.trae` verification passed.
 
-Do not delete any current runtime entry from `target_trae_path`. Keep `hooks.json`, `hooks/`, `rules/`, and `skills/`.
+Do not delete any current runtime entry from `target_trae_path`. Keep `hooks.json`, `hooks/`, `agents/`, `rules/`, and `skills/`.
 If `target_trae_path/INSTALL.md` exists from an older install, delete it as stale install residue.
 If `target_trae_path/UPSTREAM.md` exists from an older install, delete it as stale install residue.
 If `target_trae_path/memory/` exists from an older install, delete it as stale install residue.
@@ -190,8 +198,9 @@ If `target_trae_path/memory/` exists from an older install, delete it as stale i
 Important cleanup guard:
 
 - Do not delete `target_trae_path/hooks/`.
+- Do not delete `target_trae_path/agents/`.
 - Do not delete `target_trae_path/hooks.json`.
-- Immediately after cleanup, verify `target_trae_path/hooks.json` and `target_trae_path/hooks/` still exist.
+- Immediately after cleanup, verify `target_trae_path/hooks.json`, `target_trae_path/hooks/`, and `target_trae_path/agents/` still exist.
 
 ### Cleanup in bootstrap mode
 
@@ -228,12 +237,13 @@ Installation may be declared successful only when all of the following are true:
 2. `target_trae_path/rules/superpowers.md` exists.
 3. `target_trae_path/hooks.json` exists.
 4. `target_trae_path/hooks/` exists and contains the readable hook scripts.
-5. `target_trae_path/hooks.json` defines `SessionStart`, `UserPromptSubmit`, and `PreToolUse` hooks.
-6. `target_trae_path/hooks.json` calls the scripts in `target_trae_path/hooks/`.
-7. `target_trae_path/skills/` exists and contains the core skills.
-8. The package validator passed, or equivalent manual checks passed if PowerShell was unavailable.
-9. The final `.trae` top level contains only `hooks.json`, `hooks/`, `rules/`, and `skills/`.
-10. `INSTALL.md`, `UPSTREAM.md`, and `memory/` are absent from the final target `.trae`.
+5. `target_trae_path/agents/` exists and contains the Superpowers subagent definitions.
+6. `target_trae_path/hooks.json` defines `SessionStart`, `UserPromptSubmit`, and `PreToolUse` hooks.
+7. `target_trae_path/hooks.json` calls the scripts in `target_trae_path/hooks/`.
+8. `target_trae_path/skills/` exists and contains the core skills.
+9. The package validator passed, or equivalent manual checks passed if PowerShell was unavailable.
+10. The final `.trae` top level contains only `hooks.json`, `hooks/`, `agents/`, `rules/`, and `skills/`.
+11. `INSTALL.md`, `UPSTREAM.md`, and `memory/` are absent from the final target `.trae`.
 
 No memory setup is required. The persistent Superpowers reinforcement lives in `.trae/rules/superpowers.md`.
 
