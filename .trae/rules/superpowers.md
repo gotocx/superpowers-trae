@@ -131,10 +131,12 @@ This rule file is the persistent Superpowers reinforcement layer for Trae. Do no
 - **Agents:** `.trae/agents/*.md` defines named subagents Trae can auto-load.
 - **SessionStart:** injects the full `using-superpowers` skill.
 - **UserPromptSubmit:** injects a compact per-turn reminder.
-- **PreToolUse:** checks `RunCommand` for install and cleanup hazards.
+- **PreToolUse:** checks `RunCommand` for runtime deletion hazards.
 - **Rule:** `.trae/rules/superpowers.md` defines non-negotiable trigger constraints.
 - **Skill:** `.trae/skills/*/SKILL.md` contains the actual workflow instructions.
 - **Reinforcement:** persistent workflow reminders live in this rule file.
+
+During Superpowers installation or upgrade, never delete `.trae/hooks.json`, `.trae/hooks/`, `.trae/agents/`, `.trae/rules/`, or `.trae/skills/`. These are runtime files, not removable residue.
 
 ## 9. Anti-Rationalization Checks
 

@@ -35,7 +35,7 @@ Any direct child directory whose contents match the minimal structure above is a
 
 ## 2. Required variables
 
-Before any copy, delete, overwrite, or cleanup action, explicitly compute and confirm:
+Before any copy, overwrite, or source-clone removal action, explicitly compute and confirm:
 
 - `source_root`
 - `target_root`
@@ -179,50 +179,52 @@ After Phase 1, verify all of the following:
 
 If Gate 2 fails:
 
-- Do not enter cleanup.
+- Do not remove the bootstrap source clone.
 - Do not delete `source_root`.
 - Report that `.trae` verification failed.
 
-## 7. Phase 2: cleanup after Gate 2
+## 7. Phase 2: source clone removal after Gate 2
 
-Cleanup is allowed only when both base runtime gates passed:
+After Gate 2 passes, the target `.trae` is already final runtime. Do not alter, prune, slim, normalize, or delete anything inside `target_trae_path`.
+
+Source clone removal is allowed only when both base runtime gates passed:
 
 - Gate 1 path self-check passed.
 - Gate 2 target `.trae` verification passed.
 
-Do not delete any current runtime entry from `target_trae_path`. Keep `hooks.json`, `hooks/`, `agents/`, `rules/`, and `skills/`.
-If `target_trae_path/INSTALL.md` exists from an older install, delete it as stale install residue.
-If `target_trae_path/UPSTREAM.md` exists from an older install, delete it as stale install residue.
-If `target_trae_path/memory/` exists from an older install, delete it as stale install residue.
+Hard rule: do not run `Remove-Item`, `rm`, `del`, `rmdir`, or any wildcard deletion against `target_trae_path` or any child of `target_trae_path`.
 
-Important cleanup guard:
+Keep all current runtime entries:
 
-- Do not delete `target_trae_path/hooks/`.
-- Do not delete `target_trae_path/agents/`.
-- Do not delete `target_trae_path/hooks.json`.
-- Immediately after cleanup, verify `target_trae_path/hooks.json`, `target_trae_path/hooks/`, and `target_trae_path/agents/` still exist.
+- `target_trae_path/hooks.json`
+- `target_trae_path/hooks/`
+- `target_trae_path/agents/`
+- `target_trae_path/rules/`
+- `target_trae_path/skills/`
 
-### Cleanup in bootstrap mode
+If stale legacy entries such as `target_trae_path/INSTALL.md`, `target_trae_path/UPSTREAM.md`, or `target_trae_path/memory/` exist from an older failed install, report them. Do not delete them automatically during this flow.
 
-1. Delete stale legacy entries from `./.trae` only if present: `INSTALL.md`, `UPSTREAM.md`, and `memory/`.
-2. Delete everything else in the working tree except `./.trae`, including `.git`, `README.md`, `INSTALL.md`, `UPSTREAM.md`, `LICENSE`, `NOTICE.md`, and `.gitignore`.
+Immediately before declaring success, verify `target_trae_path/hooks.json`, `target_trae_path/hooks/`, and `target_trae_path/agents/` still exist.
 
-### Cleanup in nested mode
+### Bootstrap mode
 
-1. Delete stale legacy entries from `target_trae_path` only if present: `INSTALL.md`, `UPSTREAM.md`, and `memory/`.
-2. Only attempt to delete the exact `source_root` selected during root detection.
-3. Before deleting `source_root`, verify that it is the only bootstrap clone candidate, its resolved absolute path is inside `target_root`, and it is neither `target_root` nor `target_trae_path`.
-4. Do not delete sibling directories or broaden cleanup to old failed clones.
-5. Attempt recursive deletion of `source_root` at most once. If it fails, immediately follow the file-lock handling rules.
+In bootstrap mode, the bootstrap repository root is also the target project root. Do not delete anything automatically after Gate 2. Report that installation is complete and that repository files outside `.trae` can be removed manually if the user wants a `.trae`-only folder.
+
+### Nested mode
+
+1. Only attempt to delete the exact `source_root` selected during root detection.
+2. Before deleting `source_root`, verify that it is the only bootstrap clone candidate, its resolved absolute path is inside `target_root`, and it is neither `target_root` nor `target_trae_path`.
+3. Do not delete sibling directories or broaden cleanup to old failed clones.
+4. Attempt recursive deletion of `source_root` at most once. If it fails, immediately follow the file-lock handling rules.
 
 ## 8. File-lock handling
 
 If deleting `source_root` fails because of a Windows file lock:
 
-1. Stop cleanup immediately.
+1. Stop source clone removal immediately.
 2. Do not try another deletion strategy.
 3. Do not use `cmd /c rmdir`.
-4. Do not hide cleanup failures with `SilentlyContinue`.
+4. Do not hide source clone removal failures with `SilentlyContinue`.
 5. Do not mass-change file attributes and retry recursive deletion.
 6. Do not edit `target_trae_path` again.
 7. Do not roll back the installed `.trae`.
@@ -242,8 +244,8 @@ Installation may be declared successful only when all of the following are true:
 7. `target_trae_path/hooks.json` calls the scripts in `target_trae_path/hooks/`.
 8. `target_trae_path/skills/` exists and contains the core skills.
 9. The package validator passed, or equivalent manual checks passed if PowerShell was unavailable.
-10. The final `.trae` top level contains only `hooks.json`, `hooks/`, `agents/`, `rules/`, and `skills/`.
-11. `INSTALL.md`, `UPSTREAM.md`, and `memory/` are absent from the final target `.trae`.
+10. The final `.trae` top level contains at least `hooks.json`, `hooks/`, `agents/`, `rules/`, and `skills/`.
+11. No current runtime entry was deleted from `target_trae_path`.
 
 No memory setup is required. The persistent Superpowers reinforcement lives in `.trae/rules/superpowers.md`.
 

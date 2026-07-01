@@ -390,4 +390,4 @@ if ($failures.Count -gt 0) {
 }
 
 Write-Output "Superpowers for Trae validation passed."
-Write-Output "Checked rules, $($requiredAgents.Count) named agents, 3 readable Trae hooks, hook smoke output, hook cleanup guards, $($requiredSkills.Count) skills, and $($requiredSkillScripts.Count) upstream support scripts."
+Write-Output "Checked rules, $($requiredAgents.Count) named agents, 3 readable Trae hooks, hook smoke output, runtime deletion guards, $($requiredSkills.Count) skills, and $($requiredSkillScripts.Count) upstream support scripts."

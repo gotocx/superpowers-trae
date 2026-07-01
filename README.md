@@ -2,7 +2,7 @@
 
 Trae project package for the Superpowers agentic workflow. The install payload is `./.trae`.
 
-This repository is a bootstrap package, not a runtime dependency. After installation and cleanup, the target project's `.trae` directory must contain only:
+This repository is a bootstrap package, not a runtime dependency. After installation, the target project's `.trae` directory must contain:
 
 - `hooks.json`
 - `hooks/`
@@ -21,7 +21,7 @@ Install Superpowers for Trae into the current project.
 
 Use the cloned `gotocx/superpowers-trae` repository as the bootstrap source. Follow `README.md` and `INSTALL.md` as instruction documents only; do not execute Markdown files.
 
-Before copying or deleting anything, compute and report:
+Before copying anything, compute and report:
 - source_root
 - target_root
 - target_trae_path
@@ -30,19 +30,19 @@ Then follow the install gates:
 1. Detect whether this is bootstrap mode, nested mode from target root, or nested mode while standing inside the bootstrap clone.
 2. Verify `target_trae_path` is the real target project's `.trae`, not the bootstrap clone's `.trae`.
 3. Copy or refresh hooks.json, hooks/, agents/, rules/, and all official skills from `source_root/.trae`.
-4. Before cleanup, run:
+4. After copying, run:
    powershell -NoProfile -ExecutionPolicy Bypass -File ./.trae/hooks/validate-package.ps1
-5. Cleanup only after validation passes.
-6. Do not delete `.trae/hooks.json`, `.trae/hooks/`, or `.trae/agents/`; they are runtime files.
-7. Delete only stale legacy entries from the target `.trae` if present: `.trae/INSTALL.md`, `.trae/UPSTREAM.md`, and legacy memory directory.
-8. Delete the bootstrap clone only if nested-mode path checks prove it is safe.
-9. Final `.trae` must contain only `hooks.json`, `hooks/`, `agents/`, `rules/`, and `skills/`.
+5. After validation, do not modify target `.trae` again.
+6. Do not delete `.trae/hooks.json`, `.trae/hooks/`, `.trae/agents/`, `.trae/rules/`, or `.trae/skills/`; they are runtime files.
+7. Delete the bootstrap clone only if nested-mode path checks prove it is safe. In bootstrap mode, do not delete anything automatically.
+8. Final `.trae` must contain `hooks.json`, `hooks/`, `agents/`, `rules/`, and `skills/`.
+9. If stale legacy entries exist inside target `.trae`, report them instead of deleting them automatically.
 10. Report evidence for each gate.
 ```
 
 ## Hook validation
 
-Before cleanup, from the target project root:
+After copying, from the target project root:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File ./.trae/hooks/validate-package.ps1
@@ -62,7 +62,7 @@ The final runtime hook config is `.trae/hooks.json`.
 
 - `SessionStart`: injects `using-superpowers`.
 - `UserPromptSubmit`: injects a compact workflow reminder.
-- `PreToolUse` with matcher `RunCommand`: blocks common install/cleanup mistakes and asks before destructive git cleanup.
+- `PreToolUse` with matcher `RunCommand`: blocks runtime deletion mistakes and asks before destructive git cleanup.
 
 `.trae/hooks/` is runtime code and must remain installed. Keeping scripts readable makes hook debugging and upgrades straightforward.
 
