@@ -11,9 +11,26 @@ If you were dispatched by Trae Task as a subagent for a specific task, skip this
 If you think there is even a 1% chance a skill might apply to what you are doing, you MUST invoke the Trae Skill tool before responding or acting.
 
 If a skill applies, you do not have a choice. Use it.
+
+This is not negotiable. You cannot rationalize your way out of this.
 </EXTREMELY-IMPORTANT>
 
 # Using Superpowers in Trae
+
+## Runtime Bootstrap
+
+Trae should load this skill automatically through `.trae/hooks.json` on `SessionStart`. The same hook file also reinforces the workflow on `UserPromptSubmit` and guards risky `RunCommand` calls on `PreToolUse`. If you are in a Trae session and this skill was not injected, invoke `Skill(name="using-superpowers")` before doing any task work.
+
+The package has four cooperating layers:
+
+| Layer | File | Purpose |
+|---|---|---|
+| Hook | `.trae/hooks.json` and `.trae/hooks/*.ps1` | inject this skill at session start, reinforce each prompt, and guard risky shell commands |
+| Rule | `.trae/rules/superpowers.md` | keep mandatory triggers visible to the model |
+| Skill | `.trae/skills/*/SKILL.md` | provide the workflow instructions |
+| Memory | `.trae/memory/superpowers.md` copied via `manage_core_memory` | reinforce the contract across sessions |
+
+If these layers disagree, prefer direct user instructions first, then repository rules, then the current skill content.
 
 ## Instruction Priority
 
@@ -42,6 +59,8 @@ Do not use legacy `find-skills`, `skill-run`, or `remembering-conversations` scr
 
 Invoke relevant or requested skills before any response, clarification, file read, shell command, implementation, or status claim.
 
+Before entering plan mode or implementation planning: if you have not already brainstormed the work, invoke `Skill(name="brainstorming")` first.
+
 If you invoke a skill:
 
 1. Announce briefly: "I'm using `<skill>` to `<purpose>`."
@@ -52,7 +71,7 @@ If a skill contains prompt templates such as `implementer-prompt.md` or `code-re
 
 ## Skill Priority
 
-Use process skills before implementation skills.
+Use process skills before implementation skills. Brainstorming and systematic-debugging are Superpowers' most common process skills, but the rule holds for all of them.
 
 | Situation | First skill |
 |---|---|
@@ -68,6 +87,26 @@ Use process skills before implementation skills.
 | Before merge, PR, or major handoff | `requesting-code-review` |
 | Completing branch/worktree workflow | `finishing-a-development-branch` |
 | Writing or updating skills | `writing-skills` |
+| Stuck and unsure which problem-solving approach fits | `when-stuck` |
+
+### Local Problem-Solving Additions
+
+These Trae package skills are shipped at the same install level as upstream skills:
+
+| Situation | Skill |
+|---|---|
+| Force unrelated concepts together for breakthrough options | `collision-zone-thinking` |
+| Flip assumptions to reveal hidden constraints | `inversion-exercise` |
+| Recognize repeated patterns across domains | `meta-pattern-recognition` |
+| Preserve two valid approaches without premature collapse | `preserving-productive-tensions` |
+| Stress-test architecture or decisions at extreme scale | `scale-game` |
+| Remove multiple components with one simplifying insight | `simplification-cascades` |
+| Trace why an idea or technical choice evolved | `tracing-knowledge-lineages` |
+
+Examples:
+
+- "Let's build X" -> `Skill(name="brainstorming")` first, then implementation/domain skills.
+- "Fix this bug" -> `Skill(name="systematic-debugging")` first, then domain skills.
 
 ## Flattened Trae Skills
 
@@ -90,7 +129,15 @@ These thoughts mean stop and invoke the relevant skill:
 | "This is just a simple question" | Questions are tasks. Check skills first. |
 | "I need more context first" | Skill check comes before context gathering. |
 | "Let me inspect files quickly" | Skills define how to inspect. |
+| "I can check git/files quickly" | Files lack conversation context. Check skills first. |
+| "Let me gather information first" | Skills tell you how to gather information. |
+| "This doesn't need a formal skill" | If a skill exists, use it. |
 | "I remember this skill" | Skills evolve. Invoke the current one. |
+| "This doesn't count as a task" | Action equals task. Check skills first. |
+| "The skill is overkill" | Simple things become complex. Use it. |
+| "I'll just do this one thing first" | Check before doing anything. |
+| "This feels productive" | Undisciplined action wastes time. Skills prevent this. |
+| "I know what that means" | Knowing the concept is not the same as using the skill. Invoke it. |
 | "I'll code first and test later" | Use `test-driven-development` first. |
 | "The test failure is obvious" | Use `systematic-debugging` first. |
 | "I manually verified it" | Use `verification-before-completion` before success claims. |
@@ -99,3 +146,15 @@ These thoughts mean stop and invoke the relevant skill:
 ## Memory
 
 For cross-session decisions, architecture constraints, and recurring project lessons, use Trae `manage_core_memory`. Do not install or run the old local conversation-indexing scripts.
+
+For Superpowers itself, `.trae/memory/superpowers.md` is the canonical memory payload. During install or upgrade, add it only after hooks, rules, and skills pass verification. If memory cannot be configured, keep working from the hook/rule/skill layers and report memory alignment as pending.
+
+## Hook Health
+
+The expected Trae hook set is:
+
+- `SessionStart` -> `.trae/hooks/session-start.ps1`
+- `UserPromptSubmit` -> `.trae/hooks/user-prompt-submit.ps1`
+- `PreToolUse` matcher `RunCommand` -> `.trae/hooks/pre-run-command-guard.ps1`
+
+During install or upgrade, run `.trae/hooks/validate-package.ps1` from the target project root when PowerShell is available. The validator checks the hook registrations, hook smoke output, memory payload, required skills, and upstream support scripts.

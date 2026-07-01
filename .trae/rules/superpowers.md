@@ -2,6 +2,8 @@
 
 **ATTENTION AI:** This project uses the Superpowers Agentic Framework adapted for Trae. The `.trae/skills` directory contains the runtime skills. The rules below are mandatory workflow constraints.
 
+The `.trae/hooks.json` hooks inject `using-superpowers` at session start, reinforce the contract on each user prompt, and guard risky shell commands before execution. If the SessionStart hook is disabled, unavailable, or visibly did not run, your first action before any task work is to invoke `Skill(name="using-superpowers")`.
+
 ## 1. Instruction Priority
 
 1. User instructions, repository instructions, and direct requests are highest priority.
@@ -50,6 +52,18 @@ Invoke the matching skill before responding or acting.
 | A spec or requirements need an implementation plan | `Skill(name="writing-plans")` |
 | Need isolated work before implementation | `Skill(name="using-git-worktrees")` |
 | Stuck on complexity, assumptions, scale, or approach | `Skill(name="when-stuck")` |
+
+### Problem-Solving Additions
+
+| Situation | Required skill |
+|---|---|
+| Conventional approaches feel inadequate and unrelated analogies may unlock options | `Skill(name="collision-zone-thinking")` |
+| Hidden assumptions need to be flipped or challenged | `Skill(name="inversion-exercise")` |
+| The same pattern appears across multiple domains | `Skill(name="meta-pattern-recognition")` |
+| Two valid approaches optimize for different priorities | `Skill(name="preserving-productive-tensions")` |
+| Scale, limits, or edge cases need stress testing | `Skill(name="scale-game")` |
+| Complexity is growing through repeated special cases | `Skill(name="simplification-cascades")` |
+| A technical choice needs historical or lineage context | `Skill(name="tracing-knowledge-lineages")` |
 
 ### Implementation and Review
 
@@ -100,7 +114,20 @@ When a skill contains a checklist, phase list, graph, or multi-step process, the
 
 Use `manage_core_memory` for persistent project decisions, architectural constraints, recurring lessons, and Superpowers workflow reminders. Do not run the old local conversation-indexing tools.
 
-## 8. Anti-Rationalization Checks
+For Superpowers installation or upgrade, use `.trae/memory/superpowers.md` as the canonical memory payload after hooks, rules, and skills have been verified. Delete any same-title old memory, add the new payload, then confirm the same title if Trae supports readback. If memory tooling is unavailable, keep the verified hooks/rules/skills install and report memory alignment as pending.
+
+## 8. Runtime Contract
+
+- **Hook:** `.trae/hooks.json` registers `SessionStart`, `UserPromptSubmit`, and `PreToolUse` hooks.
+- **SessionStart:** `.trae/hooks/session-start.ps1` injects the full `using-superpowers` skill.
+- **UserPromptSubmit:** `.trae/hooks/user-prompt-submit.ps1` injects a compact per-turn reminder.
+- **PreToolUse:** `.trae/hooks/pre-run-command-guard.ps1` checks `RunCommand` for install and cleanup hazards.
+- **Rule:** `.trae/rules/superpowers.md` defines non-negotiable trigger constraints.
+- **Skill:** `.trae/skills/*/SKILL.md` contains the actual workflow instructions.
+- **Memory:** `.trae/memory/superpowers.md` is copied into `manage_core_memory` for cross-session reinforcement.
+- **Verification:** `.trae/hooks/validate-package.ps1` checks runtime files, hook smoke output, required skills, and upstream support scripts.
+
+## 9. Anti-Rationalization Checks
 
 If any of these thoughts appear, stop and invoke the relevant skill:
 

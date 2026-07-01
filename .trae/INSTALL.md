@@ -20,6 +20,8 @@ The bootstrap repository is intentionally minimal. Its working tree should conta
 
 A fresh clone may also contain `./.git`.
 
+The `.trae` directory is the install payload. It contains rules, skills, Trae hooks, hook validation, and the canonical memory payload.
+
 Any direct child directory whose contents match this minimal structure is a bootstrap clone candidate. The directory name is not significant.
 
 ## 2. Required variables
@@ -123,9 +125,13 @@ Allowed actions:
 
 1. Create `target_trae_path` only if missing.
 2. Refresh `target_trae_path/rules/superpowers.md`.
-3. Copy missing official skills from `source_root/.trae/skills/`.
-4. Refresh same-name official skills from `source_root/.trae/skills/`.
-5. Preserve user custom rules and non-conflicting custom skills in the target project.
+3. Refresh `target_trae_path/UPSTREAM.md`.
+4. Refresh `target_trae_path/hooks.json`.
+5. Refresh `target_trae_path/hooks/`.
+6. Refresh `target_trae_path/memory/superpowers.md`.
+7. Copy missing official skills from `source_root/.trae/skills/`.
+8. Refresh same-name official skills from `source_root/.trae/skills/`.
+9. Preserve user custom rules and non-conflicting custom skills in the target project.
 
 Forbidden during Phase 1:
 
@@ -139,47 +145,69 @@ Forbidden during Phase 1:
 After Phase 1, verify all of the following:
 
 1. `target_trae_path/rules/superpowers.md` exists.
-2. `target_trae_path/skills/` exists.
-3. `target_trae_path/skills/` contains at least these core skills:
+2. `target_trae_path/UPSTREAM.md` exists.
+3. `target_trae_path/hooks.json` exists.
+4. `target_trae_path/hooks/session-start.ps1` exists.
+5. `target_trae_path/hooks/user-prompt-submit.ps1` exists.
+6. `target_trae_path/hooks/pre-run-command-guard.ps1` exists.
+7. `target_trae_path/hooks/validate-package.ps1` exists.
+8. `target_trae_path/hooks/README.md` exists.
+9. `target_trae_path/memory/superpowers.md` exists.
+10. `target_trae_path/skills/` exists.
+11. `target_trae_path/skills/` contains at least these core skills:
    - `using-superpowers`
    - `brainstorming`
+   - `collision-zone-thinking`
+   - `condition-based-waiting`
+   - `defense-in-depth`
+   - `dispatching-parallel-agents`
+   - `executing-plans`
+   - `finishing-a-development-branch`
+   - `inversion-exercise`
+   - `meta-pattern-recognition`
+   - `preserving-productive-tensions`
+   - `receiving-code-review`
+   - `requesting-code-review`
+   - `root-cause-tracing`
+   - `scale-game`
+   - `simplification-cascades`
    - `using-git-worktrees`
    - `writing-plans`
    - `subagent-driven-development`
    - `systematic-debugging`
    - `test-driven-development`
    - `verification-before-completion`
-   - `condition-based-waiting`
-   - `root-cause-tracing`
+   - `testing-anti-patterns`
+   - `testing-skills-with-subagents`
+   - `tracing-knowledge-lineages`
+   - `when-stuck`
+   - `writing-skills`
+12. Run the package validator from the target project root when PowerShell is available:
+
+   ```powershell
+   powershell -NoProfile -ExecutionPolicy Bypass -File ./.trae/hooks/validate-package.ps1
+   ```
 
 If Gate 2 fails:
 
 - Do not inject memory.
-- Do not delete `INSTALL.md`.
+- Do not delete `target_trae_path/INSTALL.md`.
 - Do not delete `source_root`.
 - Report that `.trae` verification failed.
 
-## 7. Phase 2: memory injection
+## 7. Phase 2: memory alignment
 
 Only after Gate 2 passes may you call `manage_core_memory`.
+
+Hooks, rules, and skills are the base runtime contract. Memory is persistent reinforcement for future sessions; it should be configured whenever the Trae memory tool is available, but a memory-tool failure must not undo a verified hooks/rules/skills install.
 
 Required steps:
 
 1. Delete any existing memory with the same title.
-2. Add one new memory with:
-   - Title: `Superpowers 严格工作流约束`
-   - Keywords: `superpowers|workflow|tdd|debugging|skills`
-   - Content:
-     本项目严格遵循 obra/superpowers 开发方法论：
-     1. 功能开发必须先做设计与测试,遵循 using-superpowers > brainstorming > using-git-worktrees > writing-plans > subagent-driven-development/executing-plans > test-driven-development > requesting-code-review > finishing-a-development-branch 的闭环。
-     2. 遇到报错或测试失败时,禁止猜测,必须调用 systematic-debugging 做根因排查。
-     3. 深层调用栈问题使用 root-cause-tracing,异步等待或 flaky 测试使用 condition-based-waiting,修复后用 defense-in-depth 防复发。
-     4. 技能调用必须通过 Trae 内置 Skill 工具真实执行,`Task tool (general-purpose)` 等价于 Trae Task 子代理。
-     5. 多步骤流程使用 TodoWrite,跨任务知识通过 manage_core_memory 沉淀。
+2. Read the canonical payload from `target_trae_path/memory/superpowers.md`.
+3. Add one new memory using that title, keywords, and content.
 
 ## 8. Gate 3: memory self-check
-
-You may enter cleanup only if memory injection is self-verified.
 
 Memory self-check must confirm:
 
@@ -189,18 +217,21 @@ Memory self-check must confirm:
 
 If Gate 3 fails:
 
-- Do not delete `target_trae_path/INSTALL.md`.
-- Do not delete `source_root`.
-- Do not declare success.
-- Report that `.trae` is present but memory injection is not complete.
+- Do not claim memory is configured.
+- Do not roll back or delete the verified `.trae` runtime.
+- Report that the base hooks/rules/skills install is usable but memory alignment is pending.
 
-## 9. Phase 3: cleanup, only after all gates pass
+If `manage_core_memory` is unavailable:
 
-Cleanup is allowed only when all three are true:
+- Do not block base installation.
+- Report that memory alignment is pending because the memory tool is unavailable.
+
+## 9. Phase 3: cleanup, only after base runtime gates pass
+
+Cleanup is allowed only when both base runtime gates are true:
 
 - Gate 1 path self-check passed.
 - Gate 2 target `.trae` verification passed.
-- Gate 3 memory self-check passed.
 
 ### Cleanup in bootstrap mode
 
@@ -241,8 +272,15 @@ Installation may be declared successful only when all of the following are true:
 
 1. `target_trae_path` is located under the correct `target_root`.
 2. `target_trae_path/rules/superpowers.md` exists.
-3. `target_trae_path/skills/` exists and contains the core skills.
-4. Memory injection passed Gate 3.
+3. `target_trae_path/UPSTREAM.md` exists.
+4. `target_trae_path/hooks.json` exists and defines `SessionStart`, `UserPromptSubmit`, and `PreToolUse` hooks.
+5. `target_trae_path/hooks/session-start.ps1` exists.
+6. `target_trae_path/hooks/user-prompt-submit.ps1` exists.
+7. `target_trae_path/hooks/pre-run-command-guard.ps1` exists.
+8. `target_trae_path/skills/` exists and contains the core skills.
+9. The package validator passes, or the same checks are manually verified if PowerShell is unavailable.
+
+Memory may be declared configured only when Gate 3 passes. If Gate 3 is pending or unavailable, say "base installation complete; memory alignment pending" instead of "full installation complete."
 
 Nested failure example:
 
