@@ -59,6 +59,11 @@ $checks = @(
         Reason = 'Refusing to recursively delete the active .trae runtime. Disable this hook only if the user explicitly asks to remove Superpowers.'
     },
     @{
+        Pattern = '(?i)(^|[\s;&|])(?:rm|del|erase|Remove-Item|rmdir)\b[^\r\n;&|]*["'']?\.?[/\\]?\.trae[/\\]hooks(?:\.json|\*)["'']?'
+        Decision = 'deny'
+        Reason = 'hooks.json is the runtime hook config and must survive install cleanup. Delete only the exact .trae/hooks/ directory after validation; do not use hooks* wildcards.'
+    },
+    @{
         Pattern = '(?i)(^|[\s;&|])git\s+(?:reset\s+--hard|clean\s+-[^\r\n;&|]*x)'
         Decision = 'ask'
         Reason = 'Destructive git cleanup can delete Superpowers progress/runtime files. Get explicit user approval and run a narrower command.'

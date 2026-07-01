@@ -145,7 +145,6 @@ Test-RequiredPath ".trae/hooks/session-start.ps1" "SessionStart hook"
 Test-RequiredPath ".trae/hooks/user-prompt-submit.ps1" "UserPromptSubmit hook"
 Test-RequiredPath ".trae/hooks/pre-run-command-guard.ps1" "PreToolUse RunCommand guard hook"
 Test-RequiredPath ".trae/hooks/validate-package.ps1" "package validator"
-Test-RequiredPath ".trae/memory/superpowers.md" "memory payload"
 
 $requiredSkills = @(
     "using-superpowers",
@@ -196,6 +195,30 @@ $requiredSkillScripts = @(
 
 foreach ($scriptPath in $requiredSkillScripts) {
     Test-RequiredPath $scriptPath "upstream skill support script"
+}
+
+$rulePath = Join-Path $traeRoot "rules/superpowers.md"
+if (Test-Path -LiteralPath $rulePath) {
+    $ruleText = Get-Content -LiteralPath $rulePath -Raw -Encoding UTF8
+    foreach ($requiredRuleText in @(
+        'Rule Reinforcement',
+        '.trae/hooks.json',
+        'Skill(name="using-superpowers")',
+        'Skill(name="systematic-debugging")',
+        'Skill(name="verification-before-completion")',
+        'Trae `TodoWrite`'
+    )) {
+        if ($ruleText -notmatch [regex]::Escape($requiredRuleText)) {
+            Add-Failure "rules/superpowers.md is missing required reinforcement text: $requiredRuleText"
+        }
+    }
+
+    if ($ruleText -match "manage_core_memory") {
+        Add-Failure "rules/superpowers.md still depends on manage_core_memory"
+    }
+    if ($ruleText -match "\.trae/memory") {
+        Add-Failure "rules/superpowers.md still references .trae/memory"
+    }
 }
 
 if (Test-Path -LiteralPath $hooksJsonPath) {
@@ -323,23 +346,30 @@ if ($guardCommand) {
         if ($askJson.hookSpecificOutput.permissionDecision -ne "ask") {
             Add-Failure "PreToolUse encoded hook did not ask before destructive git cleanup"
         }
+
+        $hooksJsonDenyInput = '{"hook_event_name":"PreToolUse","tool_name":"RunCommand","tool_input":{"command":"Remove-Item .\\.trae\\hooks.json -Force"}}'
+        $hooksJsonDenyOutput = (Invoke-HookCommand $guardCommand $hooksJsonDenyInput).Stdout
+        $hooksJsonDeny = $hooksJsonDenyOutput | ConvertFrom-Json
+        if ($hooksJsonDeny.hookSpecificOutput.permissionDecision -ne "deny") {
+            Add-Failure "PreToolUse encoded hook did not deny deleting .trae/hooks.json"
+        }
+
+        $hooksWildcardDenyInput = '{"hook_event_name":"PreToolUse","tool_name":"RunCommand","tool_input":{"command":"Remove-Item .\\.trae\\hooks* -Recurse -Force"}}'
+        $hooksWildcardDenyOutput = (Invoke-HookCommand $guardCommand $hooksWildcardDenyInput).Stdout
+        $hooksWildcardDeny = $hooksWildcardDenyOutput | ConvertFrom-Json
+        if ($hooksWildcardDeny.hookSpecificOutput.permissionDecision -ne "deny") {
+            Add-Failure "PreToolUse encoded hook did not deny .trae/hooks* wildcard cleanup"
+        }
+
+        $hooksDirAllowInput = '{"hook_event_name":"PreToolUse","tool_name":"RunCommand","tool_input":{"command":"Remove-Item .\\.trae\\hooks -Recurse -Force"}}'
+        $hooksDirAllowOutput = (Invoke-HookCommand $guardCommand $hooksDirAllowInput).Stdout
+        $hooksDirAllow = $hooksDirAllowOutput | ConvertFrom-Json
+        if ($hooksDirAllow.hookSpecificOutput.permissionDecision -ne "allow") {
+            Add-Failure "PreToolUse encoded hook did not allow exact .trae/hooks directory cleanup"
+        }
     }
     catch {
         Add-Failure "PreToolUse encoded hook smoke test failed: $($_.Exception.Message)"
-    }
-}
-
-$memoryPath = Join-Path $traeRoot "memory/superpowers.md"
-if (Test-Path -LiteralPath $memoryPath) {
-    $memoryText = Get-Content -LiteralPath $memoryPath -Raw -Encoding UTF8
-    if ($memoryText -notmatch "Superpowers memory payload") {
-        Add-Failure "memory payload is missing the canonical memory title"
-    }
-    if ($memoryText -notmatch "manage_core_memory") {
-        Add-Failure "memory payload does not describe manage_core_memory usage"
-    }
-    if ($memoryText.Length -gt 3000) {
-        Add-Failure "memory payload is too large ($($memoryText.Length) chars); keep persistent context compact"
     }
 }
 
@@ -352,4 +382,4 @@ if ($failures.Count -gt 0) {
 }
 
 Write-Output "Superpowers for Trae validation passed."
-Write-Output "Checked rules, 3 self-contained Trae hooks, hook smoke output, memory payload, $($requiredSkills.Count) skills, and $($requiredSkillScripts.Count) upstream support scripts."
+Write-Output "Checked rules, 3 self-contained Trae hooks, hook smoke output, hook cleanup guards, $($requiredSkills.Count) skills, and $($requiredSkillScripts.Count) upstream support scripts."

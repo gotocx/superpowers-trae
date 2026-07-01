@@ -28,7 +28,7 @@ The runtime has four cooperating layers:
 | Hook | `.trae/hooks.json` | inject this skill at session start, reinforce each prompt, and guard risky shell commands |
 | Rule | `.trae/rules/superpowers.md` | keep mandatory triggers visible to the model |
 | Skill | `.trae/skills/*/SKILL.md` | provide the workflow instructions |
-| Memory | Trae `manage_core_memory` | reinforce the contract across sessions |
+| Rule reinforcement | `.trae/rules/superpowers.md` | keep the cross-session Superpowers contract without requiring Trae memory |
 
 If these layers disagree, prefer direct user instructions first, then repository rules, then the current skill content.
 
@@ -51,7 +51,7 @@ When upstream Superpowers text mentions another harness, translate it to Trae:
 | `Task tool (general-purpose)` | Trae `Task` subagent with the provided prompt template |
 | `Read`, `Write`, `Edit` | Trae file tools |
 | `Bash` | Trae terminal/shell tool |
-| `manage_core_memory` or local conversation memory scripts | Trae `manage_core_memory` project memory |
+| local conversation memory scripts | not used in this Trae package |
 
 Do not use legacy `find-skills`, `skill-run`, or `remembering-conversations` scripts in Trae. Skill discovery and invocation must happen through the native Skill tool and the project rules.
 
@@ -142,12 +142,6 @@ These thoughts mean stop and invoke the relevant skill:
 | "The test failure is obvious" | Use `systematic-debugging` first. |
 | "I manually verified it" | Use `verification-before-completion` before success claims. |
 | "Task/general-purpose is a Claude thing" | In Trae, use the native `Task` tool with the template. |
-
-## Memory
-
-For cross-session decisions, architecture constraints, and recurring project lessons, use Trae `manage_core_memory`. Do not install or run the old local conversation-indexing scripts.
-
-For Superpowers itself, memory is added during installation through Trae `manage_core_memory`. After cleanup, memory should live in Trae memory, not in `.trae/memory`. If memory cannot be configured, keep working from the hook/rule/skill layers and report memory alignment as pending.
 
 ## Hook Health
 

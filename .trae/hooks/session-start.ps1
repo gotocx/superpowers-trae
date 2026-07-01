@@ -5,7 +5,26 @@ $ErrorActionPreference = "Stop"
 
 $scriptPath = $MyInvocation.MyCommand.Path
 if ([string]::IsNullOrWhiteSpace($scriptPath)) {
-    $traeRoot = Join-Path (Get-Location).Path ".trae"
+    $current = (Get-Location).Path
+    $traeRoot = $null
+    while ($current) {
+        $candidate = Join-Path $current ".trae"
+        $candidateSkill = Join-Path $candidate "skills/using-superpowers/SKILL.md"
+        if (Test-Path -LiteralPath $candidateSkill) {
+            $traeRoot = $candidate
+            break
+        }
+
+        $parent = Split-Path -Parent $current
+        if ($parent -eq $current) {
+            break
+        }
+        $current = $parent
+    }
+
+    if (-not $traeRoot) {
+        $traeRoot = Join-Path (Get-Location).Path ".trae"
+    }
 }
 else {
     $scriptDir = Split-Path -Parent $scriptPath

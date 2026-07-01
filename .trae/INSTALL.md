@@ -1,16 +1,17 @@
-# Superpowers for Trae: variable + gate install flow
+# Superpowers for Trae: variable and gate install flow
 
 This file is an instruction document, not a script.
 
 - Never execute `INSTALL.md` itself.
-- Never treat this file as a command, a manual-run target, or a deletion target before the cleanup gate is open.
+- Never treat Markdown files as command targets.
 - Never create `.tmp-*`, `tmp`, `temp`, `.cache`, or any other temporary install directory.
-- Never clone, fetch, or download `obra/superpowers-skills` or any other remote repository during installation.
+- Never clone, fetch, or download `obra/superpowers`, `obra/superpowers-skills`, or any other remote repository during installation.
 - Never rename, copy, or clone this bootstrap repository again just to make its directory name match an example.
+- Never delete `.trae/hooks.json`. It is runtime configuration, not an install-only hook script.
 
 ## 1. Minimal bootstrap package
 
-The bootstrap repository is intentionally minimal. Its working tree should contain only:
+The bootstrap repository working tree should contain only:
 
 - `./.trae`
 - `./README.md`
@@ -20,44 +21,34 @@ The bootstrap repository is intentionally minimal. Its working tree should conta
 
 A fresh clone may also contain `./.git`.
 
-The `.trae` directory is the install payload. Before cleanup, it also contains install audit documents, validation scripts, hook templates, and the canonical memory payload. After cleanup, the target project's `.trae` must contain only runtime payload: `hooks.json`, `rules/`, and `skills/`.
+The `.trae` directory is the install payload. Before cleanup, it contains runtime files plus install audit and validation files. After cleanup, the target project's `.trae` must contain only:
 
-Any direct child directory whose contents match this minimal structure is a bootstrap clone candidate. The directory name is not significant.
+- `hooks.json`
+- `rules/`
+- `skills/`
+
+Any direct child directory whose contents match the minimal structure above is a bootstrap clone candidate. The directory name is not significant.
 
 ## 2. Required variables
 
-Before any copy, delete, overwrite, or memory action, you must explicitly compute and confirm:
+Before any copy, delete, overwrite, or cleanup action, explicitly compute and confirm:
 
 - `source_root`
 - `target_root`
 - `target_trae_path`
-- `memory_title`
 
-Fixed value:
-
-- `memory_title = "Superpowers 严格工作流约束"`
-
-If any variable is still ambiguous, do not proceed.
+If any variable is ambiguous, stop.
 
 ## 3. Root detection: allowed cases only
 
-You must first list the direct children of the current workspace root, count all bootstrap clone candidates, then choose exactly one of these cases.
-
-In nested mode, candidate directory names are not significant. `superpowers-trae`, `superpowers-trae-private`, or any other clone directory name may be valid if exactly one candidate exists. If there are zero candidates or more than one candidate, root detection fails. Do not rename, copy, clone again, or arbitrarily pick one candidate to continue.
+First list the direct children of the current workspace root and count all bootstrap clone candidates. Continue only in one of these cases.
 
 ### Case A: bootstrap mode
 
 Conditions:
 
 - The current workspace root is the bootstrap repository root.
-- It is a true fresh clone of this repository.
-- Its direct children are limited to:
-  - `./.git`
-  - `./.trae`
-  - `./README.md`
-  - `./LICENSE`
-  - `./NOTICE.md`
-  - `./.gitignore`
+- Its direct children are limited to `.git`, `.trae`, `README.md`, `LICENSE`, `NOTICE.md`, and `.gitignore`.
 
 Variables:
 
@@ -65,13 +56,12 @@ Variables:
 - `target_root = .`
 - `target_trae_path = ./.trae`
 
-### Case B: nested mode, running from the real target project root
+### Case B: nested mode from the target project root
 
 Conditions:
 
-- The current workspace root contains exactly one direct child that is a bootstrap clone candidate.
-- That candidate matches the minimal bootstrap package structure above.
-- The candidate does not have to be named `superpowers-trae`.
+- The current workspace root contains exactly one bootstrap clone candidate.
+- The candidate matches the minimal bootstrap package structure.
 
 Variables:
 
@@ -79,12 +69,11 @@ Variables:
 - `target_root = .`
 - `target_trae_path = ./.trae`
 
-### Case C: nested mode, but currently standing inside the bootstrap clone
+### Case C: nested mode while standing inside the bootstrap clone
 
 Conditions:
 
-- The current workspace root itself can be proven to be the bootstrap repository root.
-- The current workspace root matches the minimal bootstrap package structure above, regardless of directory name.
+- The current workspace root itself is the bootstrap repository root.
 - The parent directory is the real target project root.
 
 Variables:
@@ -99,7 +88,6 @@ If you cannot prove Case A, B, or C exactly:
 
 - Do not copy anything.
 - Do not delete anything.
-- Do not inject memory.
 - Report that root detection failed.
 
 ## 4. Gate 1: path self-check
@@ -108,18 +96,13 @@ Before copying files, all of these must be true:
 
 1. `target_trae_path` is exactly the `.trae` directory under `target_root`.
 2. In nested mode, `target_trae_path` is outside `source_root`.
-3. In nested mode, the final destination must not be `source_root/.trae`.
+3. In nested mode, the final destination is not `source_root/.trae`.
 
-If any path self-check fails:
-
-- Do not enter the copy phase.
-- Report that the target path was derived incorrectly.
+If any path self-check fails, stop and report the incorrect path.
 
 ## 5. Phase 1: copy or refresh target `.trae`
 
-Use only `source_root/.trae` as source material.
-
-Do not rename, duplicate, or reclone `source_root`. Its directory name does not affect installation eligibility.
+Use only `source_root/.trae` as source material. Do not rename, duplicate, or reclone `source_root`.
 
 Allowed actions:
 
@@ -128,13 +111,13 @@ Allowed actions:
 3. Refresh `target_trae_path/UPSTREAM.md`.
 4. Refresh `target_trae_path/hooks.json`.
 5. Refresh `target_trae_path/hooks/`.
-6. Refresh `target_trae_path/memory/superpowers.md`.
-7. Copy missing official skills from `source_root/.trae/skills/`.
-8. Refresh same-name official skills from `source_root/.trae/skills/`.
-9. Preserve user custom rules and non-conflicting custom skills in the target project.
+6. Copy missing official skills from `source_root/.trae/skills/`.
+7. Refresh same-name official skills from `source_root/.trae/skills/`.
+8. Preserve user custom rules and non-conflicting custom skills in the target project.
 
 Forbidden during Phase 1:
 
+- Deleting `target_trae_path/hooks.json`
 - Deleting `target_trae_path/INSTALL.md`
 - Deleting `source_root`
 - Deleting any bootstrap clone candidate
@@ -152,9 +135,8 @@ After Phase 1, verify all of the following:
 6. `target_trae_path/hooks/pre-run-command-guard.ps1` exists.
 7. `target_trae_path/hooks/validate-package.ps1` exists.
 8. `target_trae_path/hooks/README.md` exists.
-9. `target_trae_path/memory/superpowers.md` exists.
-10. `target_trae_path/skills/` exists.
-11. `target_trae_path/skills/` contains at least these core skills:
+9. `target_trae_path/skills/` exists.
+10. `target_trae_path/skills/` contains at least these core skills:
    - `using-superpowers`
    - `brainstorming`
    - `collision-zone-thinking`
@@ -171,18 +153,18 @@ After Phase 1, verify all of the following:
    - `root-cause-tracing`
    - `scale-game`
    - `simplification-cascades`
-   - `using-git-worktrees`
-   - `writing-plans`
    - `subagent-driven-development`
    - `systematic-debugging`
    - `test-driven-development`
-   - `verification-before-completion`
    - `testing-anti-patterns`
    - `testing-skills-with-subagents`
    - `tracing-knowledge-lineages`
+   - `using-git-worktrees`
+   - `verification-before-completion`
    - `when-stuck`
+   - `writing-plans`
    - `writing-skills`
-12. Run the package validator from the target project root when PowerShell is available:
+11. Run the package validator from the target project root when PowerShell is available:
 
    ```powershell
    powershell -NoProfile -ExecutionPolicy Bypass -File ./.trae/hooks/validate-package.ps1
@@ -190,82 +172,47 @@ After Phase 1, verify all of the following:
 
 If Gate 2 fails:
 
-- Do not inject memory.
+- Do not enter cleanup.
 - Do not delete `target_trae_path/INSTALL.md`.
 - Do not delete `source_root`.
 - Report that `.trae` verification failed.
 
-## 7. Phase 2: memory alignment
+## 7. Phase 2: cleanup after Gate 2
 
-Only after Gate 2 passes may you call `manage_core_memory`.
-
-Hooks, rules, and skills are the base runtime contract. Memory is persistent reinforcement for future sessions; it should be configured whenever the Trae memory tool is available, but a memory-tool failure must not undo a verified hooks/rules/skills install.
-
-Required steps:
-
-1. Delete any existing memory with the same title.
-2. Read the canonical payload from `target_trae_path/memory/superpowers.md`.
-3. Add one new memory using that title, keywords, and content.
-
-## 8. Gate 3: memory self-check
-
-Memory self-check must confirm:
-
-1. The delete/add operation returned success.
-2. The memory title exactly matches `memory_title`.
-3. If the tool supports readback or confirmation, perform one same-title confirmation immediately.
-
-If Gate 3 fails:
-
-- Do not claim memory is configured.
-- Do not roll back or delete the verified `.trae` runtime.
-- Report that the base hooks/rules/skills install is usable but memory alignment is pending.
-
-If `manage_core_memory` is unavailable:
-
-- Do not block base installation.
-- Report that memory alignment is pending because the memory tool is unavailable.
-
-## 9. Phase 3: cleanup, only after base runtime gates pass
-
-Cleanup is allowed only when both base runtime gates are true:
+Cleanup is allowed only when both base runtime gates passed:
 
 - Gate 1 path self-check passed.
 - Gate 2 target `.trae` verification passed.
 
-Final runtime `.trae` must be clean. Delete these install-only files and directories after Gate 2 has passed:
+Delete only these install-only entries from the target `.trae`:
 
 - `target_trae_path/INSTALL.md`
 - `target_trae_path/UPSTREAM.md`
 - `target_trae_path/hooks/`
-- `target_trae_path/memory/`
 
-After cleanup, the target `.trae` top level must contain only:
+If `target_trae_path/memory/` exists from an older install, delete it as stale install residue.
 
-- `hooks.json`
-- `rules/`
-- `skills/`
+Important cleanup guard:
+
+- Delete the exact `hooks/` directory only.
+- Do not use wildcard cleanup such as `.trae/hooks*`.
+- Do not delete `target_trae_path/hooks.json`.
+- Immediately after cleanup, verify `target_trae_path/hooks.json` still exists.
 
 ### Cleanup in bootstrap mode
 
-1. Delete the install-only files listed above from `./.trae`.
-2. Delete everything else in the working tree except `./.trae`, including:
-   - `./.git`
-   - `./README.md`
-   - `./LICENSE`
-   - `./NOTICE.md`
-   - `./.gitignore`
+1. Delete the install-only entries listed above from `./.trae`.
+2. Delete everything else in the working tree except `./.trae`, including `.git`, `README.md`, `LICENSE`, `NOTICE.md`, and `.gitignore`.
 
 ### Cleanup in nested mode
 
-1. Delete the install-only files listed above from `target_trae_path`.
+1. Delete the install-only entries listed above from `target_trae_path`.
 2. Only attempt to delete the exact `source_root` selected during root detection.
 3. Before deleting `source_root`, verify that it is the only bootstrap clone candidate, its resolved absolute path is inside `target_root`, and it is neither `target_root` nor `target_trae_path`.
-4. Do not delete sibling directories or broaden cleanup to old failed clones. If multiple candidates exist, root detection should already have failed.
+4. Do not delete sibling directories or broaden cleanup to old failed clones.
 5. Attempt recursive deletion of `source_root` at most once. If it fails, immediately follow the file-lock handling rules.
-6. Stale `./.tmp-superpowers-*` residue from older failed runs is not created by this flow. Report it by path instead of deleting it automatically.
 
-## 10. File-lock handling
+## 8. File-lock handling
 
 If deleting `source_root` fails because of a Windows file lock:
 
@@ -279,20 +226,21 @@ If deleting `source_root` fails because of a Windows file lock:
 8. Report the exact leftover path.
 9. Tell the user to close the locking process or restart the IDE/system and delete that leftover path manually.
 
-## 11. Success criteria
+## 9. Success criteria
 
 Installation may be declared successful only when all of the following are true:
 
 1. `target_trae_path` is located under the correct `target_root`.
 2. `target_trae_path/rules/superpowers.md` exists.
-3. `target_trae_path/hooks.json` exists and defines `SessionStart`, `UserPromptSubmit`, and `PreToolUse` hooks.
-4. `target_trae_path/hooks.json` is self-contained and does not reference `target_trae_path/hooks/`.
-5. `target_trae_path/skills/` exists and contains the core skills.
-6. The package validator passed before cleanup, or the same checks were manually verified if PowerShell was unavailable.
-7. The final `.trae` top level contains only `hooks.json`, `rules/`, and `skills/`.
-8. `INSTALL.md`, `UPSTREAM.md`, `hooks/`, and `memory/` are absent from the final target `.trae`.
+3. `target_trae_path/hooks.json` exists.
+4. `target_trae_path/hooks.json` defines `SessionStart`, `UserPromptSubmit`, and `PreToolUse` hooks.
+5. `target_trae_path/hooks.json` is self-contained and does not reference `target_trae_path/hooks/`.
+6. `target_trae_path/skills/` exists and contains the core skills.
+7. The package validator passed before cleanup, or equivalent manual checks passed if PowerShell was unavailable.
+8. The final `.trae` top level contains only `hooks.json`, `rules/`, and `skills/`.
+9. `INSTALL.md`, `UPSTREAM.md`, `hooks/`, and `memory/` are absent from the final target `.trae`.
 
-Memory may be declared configured only when Gate 3 passes. If Gate 3 is pending or unavailable, say "base installation complete; memory alignment pending" instead of "full installation complete."
+No memory setup is required. The persistent Superpowers reinforcement lives in `.trae/rules/superpowers.md`.
 
 Nested failure example:
 

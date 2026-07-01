@@ -8,7 +8,7 @@ This install-time directory contains hook templates, documentation, and validati
 - `session-start.ps1`: install-time template for the encoded `SessionStart` command.
 - `user-prompt-submit.ps1`: install-time template for the encoded `UserPromptSubmit` command.
 - `pre-run-command-guard.ps1`: install-time template for the encoded `PreToolUse` `RunCommand` guard.
-- `validate-package.ps1`: local smoke test for rules, hooks, memory payload, required skills, upstream support scripts, and hook output.
+- `validate-package.ps1`: local smoke test for rules, hooks, required skills, upstream support scripts, and hook output.
 
 ## Why this differs from upstream
 
@@ -20,7 +20,7 @@ This package ports the upstream behavior instead of copying the exact upstream c
 
 At upstream commit `f268f7c953744036f0fa7e9d4b73535c04e57cb8`, the shipped hook configs register only `SessionStart`. Trae `UserPromptSubmit` and `PreToolUse` are package hardening layers, not missing upstream hook migrations.
 
-After install cleanup, `.trae/hooks/` must be removed from the target project. Runtime hooks live only in `.trae/hooks.json`.
+After install cleanup, `.trae/hooks/` must be removed from the target project. Runtime hooks live only in `.trae/hooks.json`; do not delete `hooks.json`.
 
 Run validation from the target project root:
 

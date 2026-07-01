@@ -30,7 +30,6 @@ Translate upstream Superpowers tool names to Trae native tools:
 | `Task tool (general-purpose)` | Trae `Task` subagent with the completed prompt template |
 | `Read`, `Write`, `Edit` | Trae file tools |
 | `Bash` | Trae shell/terminal |
-| local conversation memory scripts | `manage_core_memory` |
 
 Do not use old `find-skills`, `skill-run`, or `remembering-conversations` scripts in Trae. Skill invocation must use the native Skill tool.
 
@@ -110,11 +109,19 @@ If a scenario matches one of these, call the flat skill directly.
 
 When a skill contains a checklist, phase list, graph, or multi-step process, the first action after invoking it is to create Trae `TodoWrite` items for those steps. Mark items complete as work actually completes.
 
-## 7. Memory
+## 7. Rule Reinforcement
 
-Use `manage_core_memory` for persistent project decisions, architectural constraints, recurring lessons, and Superpowers workflow reminders. Do not run the old local conversation-indexing tools.
+This rule file is the persistent Superpowers reinforcement layer for Trae. Do not require a separate memory payload or a memory tool to make Superpowers work.
 
-For Superpowers installation or upgrade, the installer uses the package memory payload before cleanup. Delete any same-title old memory, add the new payload with `manage_core_memory`, then confirm the same title if Trae supports readback. After cleanup, persistent memory lives in Trae memory, not in a `.trae/memory` directory. If memory tooling is unavailable, keep the verified hooks/rules/skills install and report memory alignment as pending.
+- `.trae/hooks.json` must register `SessionStart`, `UserPromptSubmit`, and `PreToolUse` hooks.
+- If `SessionStart` does not visibly inject `using-superpowers`, invoke `Skill(name="using-superpowers")` before any task work.
+- For bugs, failed tests, crashes, and unexpected behavior, invoke `Skill(name="systematic-debugging")` before proposing or applying a fix.
+- For deep call-stack symptoms or unclear origin, invoke `Skill(name="root-cause-tracing")`.
+- For flaky async waits, sleeps, timeouts, or polling guesses, invoke `Skill(name="condition-based-waiting")`.
+- Before production code, invoke `Skill(name="test-driven-development")`.
+- Before claiming done, fixed, passing, installed, or updated, invoke `Skill(name="verification-before-completion")` and cite real evidence.
+- Upstream `Task tool (general-purpose)` means Trae `Task`; upstream `TodoWrite` means Trae `TodoWrite`.
+- Multi-step skill workflows must be tracked with Trae `TodoWrite`.
 
 ## 8. Runtime Contract
 
@@ -124,7 +131,7 @@ For Superpowers installation or upgrade, the installer uses the package memory p
 - **PreToolUse:** checks `RunCommand` for install and cleanup hazards.
 - **Rule:** `.trae/rules/superpowers.md` defines non-negotiable trigger constraints.
 - **Skill:** `.trae/skills/*/SKILL.md` contains the actual workflow instructions.
-- **Memory:** persistent reinforcement is stored through Trae `manage_core_memory` during installation.
+- **Reinforcement:** persistent workflow reminders live in this rule file.
 
 ## 9. Anti-Rationalization Checks
 
