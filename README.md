@@ -21,6 +21,8 @@ Install Superpowers for Trae into the current project.
 
 Use the cloned `gotocx/superpowers-trae` repository as the bootstrap source. Follow `README.md` and `INSTALL.md` as instruction documents only; do not execute Markdown files.
 
+The install guide is `INSTALL.md` at the repository root.
+
 Before copying anything, compute and report:
 - source_root
 - target_root

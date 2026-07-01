@@ -202,7 +202,7 @@ Keep all current runtime entries:
 - `target_trae_path/rules/`
 - `target_trae_path/skills/`
 
-If stale legacy entries such as `target_trae_path/INSTALL.md`, `target_trae_path/UPSTREAM.md`, or `target_trae_path/memory/` exist from an older failed install, report them. Do not delete them automatically during this flow.
+If non-runtime entries exist inside `target_trae_path`, report them by name. Do not delete them automatically during this flow.
 
 Immediately before declaring success, verify `target_trae_path/hooks.json`, `target_trae_path/hooks/`, and `target_trae_path/agents/` still exist.
 
