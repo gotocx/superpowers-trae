@@ -20,7 +20,7 @@ The bootstrap repository is intentionally minimal. Its working tree should conta
 
 A fresh clone may also contain `./.git`.
 
-The `.trae` directory is the install payload. It contains rules, skills, Trae hooks, hook validation, and the canonical memory payload.
+The `.trae` directory is the install payload. Before cleanup, it also contains install audit documents and validation scripts. After cleanup, the target project's `.trae` must contain only runtime payload: hooks, rules, skills, and memory.
 
 Any direct child directory whose contents match this minimal structure is a bootstrap clone candidate. The directory name is not significant.
 
@@ -233,9 +233,30 @@ Cleanup is allowed only when both base runtime gates are true:
 - Gate 1 path self-check passed.
 - Gate 2 target `.trae` verification passed.
 
+Final runtime `.trae` must be clean. Delete these install-only files after Gate 2 has passed:
+
+- `target_trae_path/INSTALL.md`
+- `target_trae_path/UPSTREAM.md`
+- `target_trae_path/hooks/README.md`
+- `target_trae_path/hooks/validate-package.ps1`
+
+After cleanup, the target `.trae` top level must contain only:
+
+- `hooks.json`
+- `hooks/`
+- `rules/`
+- `skills/`
+- `memory/`
+
+The final `hooks/` directory must contain only runtime hook scripts:
+
+- `session-start.ps1`
+- `user-prompt-submit.ps1`
+- `pre-run-command-guard.ps1`
+
 ### Cleanup in bootstrap mode
 
-1. Delete `./.trae/INSTALL.md`.
+1. Delete the install-only files listed above from `./.trae`.
 2. Delete everything else in the working tree except `./.trae`, including:
    - `./.git`
    - `./README.md`
@@ -245,7 +266,7 @@ Cleanup is allowed only when both base runtime gates are true:
 
 ### Cleanup in nested mode
 
-1. Delete `target_trae_path/INSTALL.md`.
+1. Delete the install-only files listed above from `target_trae_path`.
 2. Only attempt to delete the exact `source_root` selected during root detection.
 3. Before deleting `source_root`, verify that it is the only bootstrap clone candidate, its resolved absolute path is inside `target_root`, and it is neither `target_root` nor `target_trae_path`.
 4. Do not delete sibling directories or broaden cleanup to old failed clones. If multiple candidates exist, root detection should already have failed.
@@ -272,13 +293,16 @@ Installation may be declared successful only when all of the following are true:
 
 1. `target_trae_path` is located under the correct `target_root`.
 2. `target_trae_path/rules/superpowers.md` exists.
-3. `target_trae_path/UPSTREAM.md` exists.
-4. `target_trae_path/hooks.json` exists and defines `SessionStart`, `UserPromptSubmit`, and `PreToolUse` hooks.
-5. `target_trae_path/hooks/session-start.ps1` exists.
-6. `target_trae_path/hooks/user-prompt-submit.ps1` exists.
-7. `target_trae_path/hooks/pre-run-command-guard.ps1` exists.
-8. `target_trae_path/skills/` exists and contains the core skills.
-9. The package validator passes, or the same checks are manually verified if PowerShell is unavailable.
+3. `target_trae_path/hooks.json` exists and defines `SessionStart`, `UserPromptSubmit`, and `PreToolUse` hooks.
+4. `target_trae_path/hooks/session-start.ps1` exists.
+5. `target_trae_path/hooks/user-prompt-submit.ps1` exists.
+6. `target_trae_path/hooks/pre-run-command-guard.ps1` exists.
+7. `target_trae_path/skills/` exists and contains the core skills.
+8. `target_trae_path/memory/superpowers.md` exists.
+9. The package validator passed before cleanup, or the same checks were manually verified if PowerShell was unavailable.
+10. The final `.trae` top level contains only `hooks.json`, `hooks/`, `rules/`, `skills/`, and `memory/`.
+11. The final `.trae/hooks/` directory contains only `session-start.ps1`, `user-prompt-submit.ps1`, and `pre-run-command-guard.ps1`.
+12. `INSTALL.md`, `UPSTREAM.md`, `hooks/README.md`, and `hooks/validate-package.ps1` are absent from the final target `.trae`.
 
 Memory may be declared configured only when Gate 3 passes. If Gate 3 is pending or unavailable, say "base installation complete; memory alignment pending" instead of "full installation complete."
 

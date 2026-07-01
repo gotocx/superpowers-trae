@@ -156,5 +156,3 @@ The expected Trae hook set is:
 - `SessionStart` -> `.trae/hooks/session-start.ps1`
 - `UserPromptSubmit` -> `.trae/hooks/user-prompt-submit.ps1`
 - `PreToolUse` matcher `RunCommand` -> `.trae/hooks/pre-run-command-guard.ps1`
-
-During install or upgrade, run `.trae/hooks/validate-package.ps1` from the target project root when PowerShell is available. The validator checks the hook registrations, hook smoke output, memory payload, required skills, and upstream support scripts.

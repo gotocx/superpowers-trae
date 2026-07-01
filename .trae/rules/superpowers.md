@@ -125,7 +125,6 @@ For Superpowers installation or upgrade, use `.trae/memory/superpowers.md` as th
 - **Rule:** `.trae/rules/superpowers.md` defines non-negotiable trigger constraints.
 - **Skill:** `.trae/skills/*/SKILL.md` contains the actual workflow instructions.
 - **Memory:** `.trae/memory/superpowers.md` is copied into `manage_core_memory` for cross-session reinforcement.
-- **Verification:** `.trae/hooks/validate-package.ps1` checks runtime files, hook smoke output, required skills, and upstream support scripts.
 
 ## 9. Anti-Rationalization Checks
 
