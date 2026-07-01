@@ -1,5 +1,6 @@
 param(
-    [string]$RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "../..")).Path
+    [string]$RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "../..")).Path,
+    [switch]$SkipSelfPruneSmoke
 )
 
 $ErrorActionPreference = "Stop"
@@ -126,6 +127,7 @@ $hooksJsonPath = Join-Path $traeRoot "hooks.json"
 $sessionHookPath = Join-Path $traeRoot "hooks/session-start.ps1"
 $promptHookPath = Join-Path $traeRoot "hooks/user-prompt-submit.ps1"
 $guardHookPath = Join-Path $traeRoot "hooks/pre-run-command-guard.ps1"
+$selfPrunePath = Join-Path $traeRoot "hooks/self-prune-source.ps1"
 $sessionCommand = $null
 $promptCommand = $null
 $guardCommand = $null
@@ -136,6 +138,7 @@ Test-RequiredPath ".trae/hooks/session-start.ps1" "SessionStart hook"
 Test-RequiredPath ".trae/hooks/user-prompt-submit.ps1" "UserPromptSubmit hook"
 Test-RequiredPath ".trae/hooks/pre-run-command-guard.ps1" "PreToolUse RunCommand guard hook"
 Test-RequiredPath ".trae/hooks/validate-package.ps1" "package validator"
+Test-RequiredPath ".trae/hooks/self-prune-source.ps1" "source self-prune helper"
 
 $requiredAgents = @(
     "superpowers-implementer",
@@ -213,6 +216,7 @@ if (Test-Path -LiteralPath $rulePath) {
     foreach ($requiredRuleText in @(
         'Rule Reinforcement',
         '.trae/hooks.json',
+        'self-prune-source.ps1',
         'Skill(name="using-superpowers")',
         'Skill(name="systematic-debugging")',
         'Skill(name="verification-before-completion")',
@@ -381,6 +385,46 @@ if ($guardCommand) {
     }
 }
 
+if ((-not $SkipSelfPruneSmoke) -and (Test-Path -LiteralPath $selfPrunePath)) {
+    try {
+        $startInfo = New-Object System.Diagnostics.ProcessStartInfo
+        $startInfo.FileName = "powershell"
+        $startInfo.Arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$selfPrunePath`" -SourceRoot `"$RepoRoot`" -TargetRoot `"$RepoRoot`" -TargetTraePath `"$traeRoot`" -DryRun"
+        $startInfo.WorkingDirectory = $RepoRoot
+        $startInfo.RedirectStandardOutput = $true
+        $startInfo.RedirectStandardError = $true
+        $startInfo.UseShellExecute = $false
+        $startInfo.CreateNoWindow = $true
+
+        $process = New-Object System.Diagnostics.Process
+        $process.StartInfo = $startInfo
+        [void]$process.Start()
+        $stdout = $process.StandardOutput.ReadToEnd()
+        $stderr = $process.StandardError.ReadToEnd()
+        $process.WaitForExit()
+
+        if ($process.ExitCode -eq 0) {
+            Add-Failure "self-prune helper allowed SourceRoot equal to TargetRoot"
+        }
+        if (($stdout + $stderr) -notmatch "Self-prune refused") {
+            Add-Failure "self-prune helper boundary refusal output was not explicit"
+        }
+
+        $selfPruneText = Get-Content -LiteralPath $selfPrunePath -Raw -Encoding UTF8
+        foreach ($forbiddenPattern in @("cmd /c", "rmdir /s", "SilentlyContinue")) {
+            if ($selfPruneText -match [regex]::Escape($forbiddenPattern)) {
+                Add-Failure "self-prune helper contains forbidden cleanup pattern: $forbiddenPattern"
+            }
+        }
+        if ($selfPruneText -notmatch 'Remove-Item\s+-LiteralPath\s+\$sourceResolved') {
+            Add-Failure "self-prune helper must delete only the resolved SourceRoot via Remove-Item -LiteralPath"
+        }
+    }
+    catch {
+        Add-Failure "self-prune helper smoke test failed: $($_.Exception.Message)"
+    }
+}
+
 if ($failures.Count -gt 0) {
     Write-Output "Superpowers for Trae validation failed:"
     foreach ($failure in $failures) {
@@ -390,4 +434,4 @@ if ($failures.Count -gt 0) {
 }
 
 Write-Output "Superpowers for Trae validation passed."
-Write-Output "Checked rules, $($requiredAgents.Count) named agents, 3 readable Trae hooks, hook smoke output, runtime deletion guards, $($requiredSkills.Count) skills, and $($requiredSkillScripts.Count) upstream support scripts."
+Write-Output "Checked rules, $($requiredAgents.Count) named agents, 3 readable Trae hooks, source self-prune helper, hook smoke output, runtime deletion guards, $($requiredSkills.Count) skills, and $($requiredSkillScripts.Count) upstream support scripts."

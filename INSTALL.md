@@ -6,7 +6,8 @@ This file is an instruction document, not a script.
 - Never treat Markdown files as command targets.
 - Never create `.tmp-*`, `tmp`, `temp`, `.cache`, or any other temporary install directory.
 - Never clone, fetch, or download `obra/superpowers`, `obra/superpowers-skills`, or any other remote repository during installation.
-- Never rename, copy, or clone this bootstrap repository again just to make its directory name match an example.
+- After `source_root` is selected, never run `git clone` again during the same installation attempt.
+- Never rename, copy, move, or clone this bootstrap repository again just to make its directory name match an example.
 - Never delete `.trae/hooks.json`. It is runtime configuration, not an install-only hook script.
 
 ## 1. Minimal bootstrap package
@@ -35,7 +36,7 @@ Any direct child directory whose contents match the minimal structure above is a
 
 ## 2. Required variables
 
-Before any copy, overwrite, or source-clone removal action, explicitly compute and confirm:
+Before any move, copy, overwrite, or source-clone removal action, explicitly compute and confirm:
 
 - `source_root`
 - `target_root`
@@ -96,7 +97,7 @@ If you cannot prove Case A, B, or C exactly:
 
 ## 4. Gate 1: path self-check
 
-Before copying files, all of these must be true:
+Before moving, copying, or refreshing files, all of these must be true:
 
 1. `target_trae_path` is exactly the `.trae` directory under `target_root`.
 2. In nested mode, `target_trae_path` is outside `source_root`.
@@ -104,20 +105,27 @@ Before copying files, all of these must be true:
 
 If any path self-check fails, stop and report the incorrect path.
 
-## 5. Phase 1: copy or refresh target `.trae`
+## 5. Phase 1: move, copy, or refresh target `.trae`
 
 Use only `source_root/.trae` as source material. Do not rename, duplicate, or reclone `source_root`.
 
 Allowed actions:
 
-1. Create `target_trae_path` only if missing.
-2. Refresh `target_trae_path/rules/superpowers.md`.
-3. Refresh `target_trae_path/hooks.json`.
-4. Refresh `target_trae_path/hooks/`.
-5. Refresh `target_trae_path/agents/`.
-6. Copy missing official skills from `source_root/.trae/skills/`.
-7. Refresh same-name official skills from `source_root/.trae/skills/`.
+1. If `target_trae_path` does not exist, move `source_root/.trae` to exactly `target_trae_path`.
+2. If `target_trae_path` already exists, refresh `target_trae_path/rules/superpowers.md`.
+3. If `target_trae_path` already exists, refresh `target_trae_path/hooks.json`.
+4. If `target_trae_path` already exists, refresh `target_trae_path/hooks/`.
+5. If `target_trae_path` already exists, refresh `target_trae_path/agents/`.
+6. If `target_trae_path` already exists, copy missing official skills from `source_root/.trae/skills/`.
+7. If `target_trae_path` already exists, refresh same-name official skills from `source_root/.trae/skills/`.
 8. Preserve user custom rules, custom agents, and non-conflicting custom skills in the target project.
+
+Fresh-target move rule:
+
+- Moving the whole `.trae` payload is allowed only when `target_trae_path` is absent before Phase 1.
+- Do not move into an existing `.trae` directory.
+- Do not move only `hooks.json` or only part of `.trae`.
+- After moving, do not recreate, reclone, or download a replacement source.
 
 Forbidden during Phase 1:
 
@@ -136,14 +144,15 @@ After Phase 1, verify all of the following:
 4. `target_trae_path/hooks/user-prompt-submit.ps1` exists.
 5. `target_trae_path/hooks/pre-run-command-guard.ps1` exists.
 6. `target_trae_path/hooks/validate-package.ps1` exists.
-7. `target_trae_path/agents/` exists.
-8. `target_trae_path/agents/` contains at least these agent definitions:
+7. `target_trae_path/hooks/self-prune-source.ps1` exists.
+8. `target_trae_path/agents/` exists.
+9. `target_trae_path/agents/` contains at least these agent definitions:
    - `superpowers-implementer.md`
    - `superpowers-task-reviewer.md`
    - `superpowers-code-reviewer.md`
    - `superpowers-plan-reviewer.md`
-9. `target_trae_path/skills/` exists.
-10. `target_trae_path/skills/` contains at least these core skills:
+10. `target_trae_path/skills/` exists.
+11. `target_trae_path/skills/` contains at least these core skills:
    - `using-superpowers`
    - `brainstorming`
    - `collision-zone-thinking`
@@ -183,7 +192,7 @@ If Gate 2 fails:
 - Do not delete `source_root`.
 - Report that `.trae` verification failed.
 
-## 7. Phase 2: source clone removal after Gate 2
+## 7. Phase 2: self-prune source clone after Gate 2
 
 After Gate 2 passes, the target `.trae` is already final runtime. Do not alter, prune, slim, normalize, or delete anything inside `target_trae_path`.
 
@@ -193,6 +202,23 @@ Source clone removal is allowed only when both base runtime gates passed:
 - Gate 2 target `.trae` verification passed.
 
 Hard rule: do not run `Remove-Item`, `rm`, `del`, `rmdir`, or any wildcard deletion against `target_trae_path` or any child of `target_trae_path`.
+
+Hard rule: do not run raw recursive deletion for source cleanup. Use the installed self-prune helper from the target project root:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./.trae/hooks/self-prune-source.ps1 -SourceRoot "<source_root>" -TargetRoot "<target_root>" -TargetTraePath "<target_trae_path>"
+```
+
+The helper must refuse cleanup unless it proves all of the following:
+
+1. `target_trae_path` is exactly `target_root/.trae`.
+2. The target runtime validator passes.
+3. `source_root` is a minimal Superpowers bootstrap clone or the already-moved remainder of one.
+4. `source_root` is inside `target_root`.
+5. `source_root` is not `target_root`.
+6. `source_root` is not `target_trae_path`.
+7. `target_trae_path` is not inside `source_root`.
+8. No wildcard or sibling directory cleanup is required.
 
 Keep all current runtime entries:
 
@@ -212,10 +238,10 @@ In bootstrap mode, the bootstrap repository root is also the target project root
 
 ### Nested mode
 
-1. Only attempt to delete the exact `source_root` selected during root detection.
-2. Before deleting `source_root`, verify that it is the only bootstrap clone candidate, its resolved absolute path is inside `target_root`, and it is neither `target_root` nor `target_trae_path`.
-3. Do not delete sibling directories or broaden cleanup to old failed clones.
-4. Attempt recursive deletion of `source_root` at most once. If it fails, immediately follow the file-lock handling rules.
+1. Only attempt to self-prune the exact `source_root` selected during root detection.
+2. Do not delete sibling directories or broaden cleanup to old failed clones.
+3. Run the helper at most once. If it fails, immediately follow the file-lock handling rules.
+4. Do not reclone after source cleanup fails.
 
 ## 8. File-lock handling
 
@@ -230,6 +256,7 @@ If deleting `source_root` fails because of a Windows file lock:
 7. Do not roll back the installed `.trae`.
 8. Report the exact leftover path.
 9. Tell the user to close the locking process or restart the IDE/system and delete that leftover path manually.
+10. Do not run `git clone` again to replace a locked or already-removed source clone.
 
 ## 9. Success criteria
 

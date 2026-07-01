@@ -132,11 +132,12 @@ This rule file is the persistent Superpowers reinforcement layer for Trae. Do no
 - **SessionStart:** injects the full `using-superpowers` skill.
 - **UserPromptSubmit:** injects a compact per-turn reminder.
 - **PreToolUse:** checks `RunCommand` for runtime deletion hazards.
+- **Self-prune helper:** `.trae/hooks/self-prune-source.ps1` may remove only the verified bootstrap source clone after the target runtime validator passes.
 - **Rule:** `.trae/rules/superpowers.md` defines non-negotiable trigger constraints.
 - **Skill:** `.trae/skills/*/SKILL.md` contains the actual workflow instructions.
 - **Reinforcement:** persistent workflow reminders live in this rule file.
 
-During Superpowers installation or upgrade, never delete `.trae/hooks.json`, `.trae/hooks/`, `.trae/agents/`, `.trae/rules/`, or `.trae/skills/`. These are runtime files, not removable residue.
+During Superpowers installation or upgrade, never delete `.trae/hooks.json`, `.trae/hooks/`, `.trae/agents/`, `.trae/rules/`, or `.trae/skills/`. These are runtime files, not removable residue. If a nested bootstrap clone must be removed, use `.trae/hooks/self-prune-source.ps1`; do not reclone after the target runtime has already validated.
 
 ## 9. Anti-Rationalization Checks
 
