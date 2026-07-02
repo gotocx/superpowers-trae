@@ -77,12 +77,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./.trae/hooks/validate-packa
 
 The validator checks:
 
-- `hooks.json` defines `SessionStart`, `UserPromptSubmit`, and `PreToolUse`.
+- `hooks.json` defines `SessionStart` and `UserPromptSubmit`.
 - `hooks.json` directly calls readable scripts in `.trae/hooks/`.
 - `.trae/agents/` contains the Superpowers named subagent definitions.
 - `.trae/hooks/self-prune-source.ps1` refuses unsafe bootstrap source cleanup.
 - Required rules, skills, and upstream support scripts exist.
-- SessionStart, UserPromptSubmit, and PreToolUse smoke tests pass.
+- SessionStart and UserPromptSubmit smoke tests pass.
 
 ## Runtime hooks
 
@@ -90,7 +90,7 @@ The final runtime hook config is `.trae/hooks.json`.
 
 - `SessionStart`: injects `using-superpowers`.
 - `UserPromptSubmit`: injects a compact workflow reminder.
-- `PreToolUse` with matcher `RunCommand`: blocks runtime deletion mistakes and asks before destructive git cleanup.
+The old `pre-run-command-guard.ps1` file is now a fail-open compatibility stub. `PreToolUse` is not registered by default because some Windows Trae host versions can leave hook stdin open and strand PowerShell processes.
 
 `.trae/hooks/` is runtime code and must remain installed. Keeping scripts readable makes hook debugging and upgrades straightforward.
 
@@ -107,11 +107,8 @@ After installation, open the target project in Trae and verify:
 
 1. `SessionStart` injects the `using-superpowers` bootstrap.
 2. A normal prompt receives the compact Superpowers reminder.
-3. `RunCommand` `git status --short` is allowed.
-4. `RunCommand` `powershell -File ./INSTALL.md` is denied.
-5. `RunCommand` `Remove-Item .\.trae\hooks.json -Force` is denied.
-6. `RunCommand` `Remove-Item .\.trae\hooks -Recurse -Force` is denied.
-7. `RunCommand` `Remove-Item .\.trae\agents -Recurse -Force` is denied.
+3. Repeated normal prompts do not leave growing `powershell.exe` hook processes.
+4. A normal development task still receives Superpowers skill reminders.
 
 ## Upstream sync
 

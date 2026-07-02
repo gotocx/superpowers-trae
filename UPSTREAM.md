@@ -72,15 +72,15 @@ Trae uses project hooks at `.trae/hooks.json`. The migrated behavior is:
 
 - `SessionStart` injects the full `using-superpowers` skill at session start.
 - `UserPromptSubmit` injects a compact reminder before each user turn so the skill contract survives long sessions.
-- `PreToolUse` with matcher `RunCommand` blocks executing install Markdown as scripts, blocks recursive deletion of the active `.trae` runtime, and asks before destructive git cleanup.
+- `pre-run-command-guard.ps1` is retained only as a fail-open compatibility stub, and `PreToolUse` is not registered by default because Windows PowerShell stdin handling can hang when a Trae host leaves hook stdin open.
 - `SessionStart` and `UserPromptSubmit` emit Trae hook JSON with `hookSpecificOutput.additionalContext` for context injection.
-- Trae `PreToolUse` JSON output is used for command permission decisions.
+- Trae `PreToolUse` JSON output is not part of the default runtime because it requires stdin handling on every command.
 - Hook commands in `.trae/hooks.json` directly run readable PowerShell scripts in `.trae/hooks/`.
 - `.trae/hooks/validate-package.ps1` smoke-tests all hook registrations, hook outputs, required runtime files, required skills, and upstream support scripts.
 
 Do not copy upstream hook commands verbatim; they depend on plugin root variables such as `CLAUDE_PLUGIN_ROOT`. Port behavior, not harness-specific paths.
 
-Trae `UserPromptSubmit` and `PreToolUse` are Trae-specific hardening layers. They are not upstream parity requirements, but they are part of this package's install contract and must be validated before release. The `.trae/hooks/` directory is runtime code and must remain installed.
+Trae `UserPromptSubmit` is a Trae-specific hardening layer. `PreToolUse` is not active until Trae hook stdin behavior is safe across Windows hosts. The `.trae/hooks/` directory is runtime code and must remain installed.
 
 ## Subagent migration contract
 

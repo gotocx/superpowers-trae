@@ -19,13 +19,13 @@ This is not negotiable. You cannot rationalize your way out of this.
 
 ## Runtime Bootstrap
 
-Trae should load this skill automatically through `.trae/hooks.json` on `SessionStart`. The same hook file also reinforces the workflow on `UserPromptSubmit` and guards risky `RunCommand` calls on `PreToolUse`. If you are in a Trae session and this skill was not injected, open or read `.trae/skills/using-superpowers/SKILL.md` before doing any task work.
+Trae should load this skill automatically through `.trae/hooks.json` on `SessionStart`. The same hook file also reinforces the workflow on `UserPromptSubmit`. If you are in a Trae session and this skill was not injected, open or read `.trae/skills/using-superpowers/SKILL.md` before doing any task work.
 
 The runtime has four cooperating layers:
 
 | Layer | File | Purpose |
 |---|---|---|
-| Hook | `.trae/hooks.json` | inject this skill at session start, reinforce each prompt, and guard risky shell commands |
+| Hook | `.trae/hooks.json` | inject this skill at session start and reinforce each prompt |
 | Agent | `.trae/agents/*.md` | provide named subagents for common Superpowers dispatch roles |
 | Rule | `.trae/rules/superpowers.md` | keep mandatory triggers visible to the model |
 | Skill | `.trae/skills/*/SKILL.md` | provide the workflow instructions |
@@ -179,4 +179,4 @@ The expected Trae hook set is:
 
 - `SessionStart` -> full `using-superpowers` bootstrap
 - `UserPromptSubmit` -> compact per-turn reminder
-- `PreToolUse` matcher `RunCommand` -> command guard
+- `PreToolUse` is intentionally not registered by default on Windows because hook stdin can be left open by some Trae host versions, stranding PowerShell processes.

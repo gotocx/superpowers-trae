@@ -170,7 +170,7 @@ Test-RequiredPath ".trae/rules/superpowers.md" "Trae Superpowers rule"
 Test-RequiredPath ".trae/hooks.json" "Trae hooks config"
 Test-RequiredPath ".trae/hooks/session-start.ps1" "SessionStart hook"
 Test-RequiredPath ".trae/hooks/user-prompt-submit.ps1" "UserPromptSubmit hook"
-Test-RequiredPath ".trae/hooks/pre-run-command-guard.ps1" "PreToolUse RunCommand guard hook"
+Test-RequiredPath ".trae/hooks/pre-run-command-guard.ps1" "optional PreToolUse RunCommand guard script"
 Test-RequiredPath ".trae/hooks/validate-package.ps1" "package validator"
 Test-RequiredPath ".trae/hooks/self-prune-source.ps1" "source self-prune helper"
 
@@ -275,10 +275,14 @@ if (Test-Path -LiteralPath $hooksJsonPath) {
     try {
         $hooksConfig = Get-Content -LiteralPath $hooksJsonPath -Raw -Encoding UTF8 | ConvertFrom-Json
 
-        foreach ($eventName in @("SessionStart", "UserPromptSubmit", "PreToolUse")) {
+        foreach ($eventName in @("SessionStart", "UserPromptSubmit")) {
             if (-not $hooksConfig.hooks.$eventName) {
                 Add-Failure "hooks.json does not define hooks.$eventName"
             }
+        }
+
+        if ($hooksConfig.hooks.PreToolUse) {
+            Add-Failure "hooks.json must not register PreToolUse by default; Windows Trae hosts can strand PowerShell stdin readers"
         }
 
         $sessionCommands = @(Get-HookCommands $hooksConfig "SessionStart")
@@ -299,19 +303,6 @@ if (Test-Path -LiteralPath $hooksJsonPath) {
             Test-HookScriptReference $promptCommand ".trae/hooks/user-prompt-submit.ps1" "hooks.UserPromptSubmit"
         }
 
-        $preToolGroups = @($hooksConfig.hooks.PreToolUse)
-        if (-not ($preToolGroups | Where-Object { $_.matcher -eq "RunCommand" })) {
-            Add-Failure "hooks.PreToolUse does not define matcher RunCommand"
-        }
-
-        $preToolCommands = @(Get-HookCommands $hooksConfig "PreToolUse")
-        if ($preToolCommands.Count -ne 1) {
-            Add-Failure "hooks.PreToolUse should define exactly one command hook"
-        }
-        else {
-            $guardCommand = $preToolCommands[0]
-            Test-HookScriptReference $guardCommand ".trae/hooks/pre-run-command-guard.ps1" "hooks.PreToolUse"
-        }
     }
     catch {
         Add-Failure "hooks.json is not valid JSON: $($_.Exception.Message)"
@@ -367,62 +358,6 @@ if ($promptCommand) {
     }
 }
 
-if ($guardCommand) {
-    try {
-        $allowInput = '{"hook_event_name":"PreToolUse","tool_name":"RunCommand","tool_input":{"command":"git status --short"}}'
-        $allowOutput = (Invoke-HookCommand $guardCommand $allowInput).Stdout
-        $allowJson = $allowOutput | ConvertFrom-Json
-        if ($allowJson.hookSpecificOutput.permissionDecision -ne "allow") {
-            Add-Failure "PreToolUse hook did not allow a benign RunCommand payload"
-        }
-
-        $denyInput = '{"hook_event_name":"PreToolUse","tool_name":"RunCommand","tool_input":{"command":"powershell -File ./INSTALL.md"}}'
-        $denyOutput = (Invoke-HookCommand $guardCommand $denyInput).Stdout
-        $denyJson = $denyOutput | ConvertFrom-Json
-        if ($denyJson.hookSpecificOutput.permissionDecision -ne "deny") {
-            Add-Failure "PreToolUse hook did not deny executing Markdown as a script"
-        }
-
-        $askInput = '{"hook_event_name":"PreToolUse","tool_name":"RunCommand","tool_input":{"command":"git reset --hard"}}'
-        $askOutput = (Invoke-HookCommand $guardCommand $askInput).Stdout
-        $askJson = $askOutput | ConvertFrom-Json
-        if ($askJson.hookSpecificOutput.permissionDecision -ne "ask") {
-            Add-Failure "PreToolUse hook did not ask before destructive git cleanup"
-        }
-
-        $hooksJsonDenyInput = '{"hook_event_name":"PreToolUse","tool_name":"RunCommand","tool_input":{"command":"Remove-Item .\\.trae\\hooks.json -Force"}}'
-        $hooksJsonDenyOutput = (Invoke-HookCommand $guardCommand $hooksJsonDenyInput).Stdout
-        $hooksJsonDeny = $hooksJsonDenyOutput | ConvertFrom-Json
-        if ($hooksJsonDeny.hookSpecificOutput.permissionDecision -ne "deny") {
-            Add-Failure "PreToolUse hook did not deny deleting .trae/hooks.json"
-        }
-
-        $hooksWildcardDenyInput = '{"hook_event_name":"PreToolUse","tool_name":"RunCommand","tool_input":{"command":"Remove-Item .\\.trae\\hooks* -Recurse -Force"}}'
-        $hooksWildcardDenyOutput = (Invoke-HookCommand $guardCommand $hooksWildcardDenyInput).Stdout
-        $hooksWildcardDeny = $hooksWildcardDenyOutput | ConvertFrom-Json
-        if ($hooksWildcardDeny.hookSpecificOutput.permissionDecision -ne "deny") {
-            Add-Failure "PreToolUse hook did not deny .trae/hooks* wildcard cleanup"
-        }
-
-        $hooksDirDenyInput = '{"hook_event_name":"PreToolUse","tool_name":"RunCommand","tool_input":{"command":"Remove-Item .\\.trae\\hooks -Recurse -Force"}}'
-        $hooksDirDenyOutput = (Invoke-HookCommand $guardCommand $hooksDirDenyInput).Stdout
-        $hooksDirDeny = $hooksDirDenyOutput | ConvertFrom-Json
-        if ($hooksDirDeny.hookSpecificOutput.permissionDecision -ne "deny") {
-            Add-Failure "PreToolUse hook did not deny deleting .trae/hooks"
-        }
-
-        $agentsDirDenyInput = '{"hook_event_name":"PreToolUse","tool_name":"RunCommand","tool_input":{"command":"Remove-Item .\\.trae\\agents -Recurse -Force"}}'
-        $agentsDirDenyOutput = (Invoke-HookCommand $guardCommand $agentsDirDenyInput).Stdout
-        $agentsDirDeny = $agentsDirDenyOutput | ConvertFrom-Json
-        if ($agentsDirDeny.hookSpecificOutput.permissionDecision -ne "deny") {
-            Add-Failure "PreToolUse hook did not deny deleting .trae/agents"
-        }
-    }
-    catch {
-        Add-Failure "PreToolUse hook smoke test failed: $($_.Exception.Message)"
-    }
-}
-
 if ((-not $SkipSelfPruneSmoke) -and (Test-Path -LiteralPath $selfPrunePath)) {
     try {
         $startInfo = New-Object System.Diagnostics.ProcessStartInfo
@@ -472,4 +407,4 @@ if ($failures.Count -gt 0) {
 }
 
 Write-Output "Superpowers for Trae validation passed."
-Write-Output "Checked rules, $($requiredAgents.Count) named agents, 3 readable Trae hooks, source self-prune helper, hook smoke output, runtime deletion guards, $($requiredSkills.Count) skills, and $($requiredSkillScripts.Count) upstream support scripts."
+Write-Output "Checked rules, $($requiredAgents.Count) named agents, 2 registered Trae hooks, optional RunCommand guard script, source self-prune helper, hook smoke output, $($requiredSkills.Count) skills, and $($requiredSkillScripts.Count) upstream support scripts."

@@ -2,7 +2,7 @@
 
 **ATTENTION AI:** This project uses the Superpowers Agentic Framework adapted for Trae. The `.trae/skills` directory contains the runtime skills. The rules below are mandatory workflow constraints.
 
-The `.trae/hooks.json` hooks inject `using-superpowers` at session start, reinforce the contract on each user prompt, and guard risky shell commands before execution. Trae may auto-load matching skills as context. If the SessionStart hook is disabled, unavailable, or visibly did not run, your first action before any task work is to open or read `.trae/skills/using-superpowers/SKILL.md`.
+The `.trae/hooks.json` hooks inject `using-superpowers` at session start and reinforce the contract on each user prompt. Trae may auto-load matching skills as context. If the SessionStart hook is disabled, unavailable, or visibly did not run, your first action before any task work is to open or read `.trae/skills/using-superpowers/SKILL.md`.
 
 ## 1. Instruction Priority
 
@@ -135,7 +135,7 @@ When a skill contains a checklist, phase list, graph, or multi-step process, the
 
 This rule file is the persistent Superpowers reinforcement layer for Trae. Do not require a separate memory payload or a memory tool to make Superpowers work.
 
-- `.trae/hooks.json` must register `SessionStart`, `UserPromptSubmit`, and `PreToolUse` hooks.
+- `.trae/hooks.json` must register `SessionStart` and `UserPromptSubmit` hooks. `PreToolUse` is not enabled by default because some Windows Trae host versions can leave stdin open and strand PowerShell hook processes.
 - `.trae/agents/` contains named subagent definitions for common Superpowers dispatch roles.
 - If `SessionStart` does not visibly inject `using-superpowers`, open or read `.trae/skills/using-superpowers/SKILL.md` before any task work.
 - For bugs, failed tests, crashes, and unexpected behavior, use `systematic-debugging` before proposing or applying a fix.
@@ -151,11 +151,11 @@ This rule file is the persistent Superpowers reinforcement layer for Trae. Do no
 
 ## 9. Runtime Contract
 
-- **Hook:** `.trae/hooks.json` registers `SessionStart`, `UserPromptSubmit`, and `PreToolUse` hooks that call readable scripts in `.trae/hooks/`.
+- **Hook:** `.trae/hooks.json` registers `SessionStart` and `UserPromptSubmit` hooks that call readable scripts in `.trae/hooks/`.
 - **Agents:** `.trae/agents/*.md` defines named subagents Trae can auto-load.
 - **SessionStart:** injects the full `using-superpowers` skill.
 - **UserPromptSubmit:** injects a compact per-turn reminder.
-- **PreToolUse:** checks `RunCommand` for runtime deletion hazards.
+- **PreToolUse guard:** `.trae/hooks/pre-run-command-guard.ps1` is shipped but not registered by default.
 - **Self-prune helper:** `.trae/hooks/self-prune-source.ps1` may remove only the verified bootstrap source clone after the target runtime validator passes.
 - **Rule:** `.trae/rules/superpowers.md` defines non-negotiable trigger constraints.
 - **Skill:** `.trae/skills/*/SKILL.md` contains the actual workflow instructions.

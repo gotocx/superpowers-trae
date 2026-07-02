@@ -267,8 +267,8 @@ Installation may be declared successful only when all of the following are true:
 3. `target_trae_path/hooks.json` exists.
 4. `target_trae_path/hooks/` exists and contains the readable hook scripts.
 5. `target_trae_path/agents/` exists and contains the Superpowers subagent definitions.
-6. `target_trae_path/hooks.json` defines `SessionStart`, `UserPromptSubmit`, and `PreToolUse` hooks.
-7. `target_trae_path/hooks.json` calls the scripts in `target_trae_path/hooks/`.
+6. `target_trae_path/hooks.json` defines `SessionStart` and `UserPromptSubmit` hooks.
+7. `target_trae_path/hooks.json` calls the registered scripts in `target_trae_path/hooks/`.
 8. `target_trae_path/skills/` exists and contains the core skills.
 9. The package validator passed, or equivalent manual checks passed if PowerShell was unavailable.
 10. The final `.trae` top level contains at least `hooks.json`, `hooks/`, `agents/`, `rules/`, and `skills/`.
